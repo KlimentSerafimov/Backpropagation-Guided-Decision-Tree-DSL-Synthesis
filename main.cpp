@@ -319,19 +319,19 @@ DecisionTreeScore get_opt_size_of_decision_tree(int n, int f)
     return size_opt;
 }
 
-//void print_decision_tree_of_f(int n, int f)
-//{
-//    Data new_data;
-//    new_data.init_exaustive_table_with_unary_output(n, f);
-//
-//    dp_decision_tree<Data> decision_tree_solver;
-//    DecisionTreeScore size_opt;
-//    net::parameters cutoff_parametes;
-//    size_opt = decision_tree_solver.synthesize_decision_tree_and_get_size
-//            (cutoff_parametes, n, new_data, optimal);
-//
-//    return size_opt;
-//}
+void print_decision_tree_of_f(int n, int f)
+{
+    Data new_data;
+    new_data.init_exaustive_table_with_unary_output(n, f);
+
+    dp_decision_tree<Data> decision_tree_solver;
+    DecisionTreeScore size_opt;
+    net::parameters cutoff_parametes;
+    size_opt = decision_tree_solver.synthesize_decision_tree_and_get_size
+            (cutoff_parametes, n, new_data, optimal);
+
+    return size_opt;
+}
 
 vector<f_and_score> get_smallest_f(int n)
 {
