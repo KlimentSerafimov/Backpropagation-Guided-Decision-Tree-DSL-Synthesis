@@ -7,13 +7,15 @@
 
 #include "Data.h"
 
+int era_counter = 0;
+
 template<typename datatype>
 class dp_decision_tree
 {
 public:
     struct dp_ret
     {
-        bool vis;
+        //bool vis;
 
         int w;
         int w_root;
@@ -26,9 +28,26 @@ public:
         vector<string> dt_strings;
         int num_solutions;
 
+        int local_era = -1;
+
+        bool get_vis()
+        {
+            return local_era == era_counter;
+        }
+
+        void set_vis()
+        {
+            era_counter = local_era;
+        }
+
+        void set_vis_false()
+        {
+            local_era = -1;
+        }
+
         void init(int _w, int _h, int _w_root, int _h_root, int _num_solutions)
         {
-            vis = true;
+            set_vis();
             w = _w,
             h = _h,
             w_root = _w_root,
@@ -38,7 +57,7 @@ public:
 
         void init()
         {
-            vis = false;
+            set_vis_false();
             w = (1<<30);
             h = (1<<30);
             num_solutions = 0;
@@ -60,7 +79,7 @@ public:
 
                 num_solutions = left.num_solutions*right.num_solutions;
                 update_dt_strings = true;
-                dt_strings.clear()
+                dt_strings.clear();
                 assert(num_solutions < (1<<15));
             }
             else if(left.w + right.w + 1 == w)
@@ -74,11 +93,17 @@ public:
             if(update_dt_strings)
             {
 
-                for(int i = 0; i < left.dt_strings; i++)
+                for(int i = 0; i < left.dt_strings.size(); i++)
                 {
-                    for(int j = 0; j < right.dt_strings; j++)
+                    for(int j = 0; j < right.dt_strings.size(); j++)
                     {
-                        dt_strings.pb("(mask_used="+to_string(mask_used) + " left=" + left[i] + " right=" + right[i]);
+                        string bracket = "(";
+                        string name = bracket +
+                                "mask_used=" + to_string(mask_used) +
+                                " left=" + left.dt_strings[i] +
+                                " right=" + right.dt_strings[j] +
+                                ")";
+                        dt_strings.pb(name);
                     }
                 }
             }
@@ -139,9 +164,9 @@ public:
     dp_ret rek(int n, datatype *the_data, int mask)
     {
         assert(mask < (1<<16));
-        if(!dp_data[mask].vis)
+        if(!dp_data[mask].get_vis())
         {
-            dp_data[mask].vis = true;
+            dp_data[mask].set_vis();
             if(the_data->is_constant())
             {
                 bit_signature out  = 0;
@@ -244,9 +269,9 @@ public:
             assert(0);
         }
 
-        if(1 == dp_w[mask]) return;
-        print_tree(n, dp_w_root[mask], t+1);
-        print_tree(n, mask-dp_w_root[mask], t+1);
+        if(1 == dp_data[mask].w) return;
+        print_tree(n, dp_data[mask].w_root, t+1);
+        print_tree(n, mask-dp_data[mask].w_root, t+1);
     }
 
     int rez[33];
@@ -267,6 +292,10 @@ public:
     //IDEAS global challenge
     //Video for Fond for innovation
 
+    void initialize_local_optimal_search()
+    {
+        era_counter++;
+    }
 
     DecisionTreeScore synthesize_decision_tree_and_get_size
             (net::parameters param, int n, datatype the_data, DecisionTreeSynthesiserType synthesizer_type)
@@ -276,13 +305,13 @@ public:
         if(synthesizer_type == optimal)
         {
 
-            memset(vis, 0, sizeof(vis));
-            memset(dp_w, 63, sizeof(dp_w));
-            memset(dp_h, 63, sizeof(dp_h));
+
 
             if(n <= 4)
             {
                 dp_ret opt;
+
+                initialize_local_optimal_search();
 
                 opt = rek(n, &the_data, (1<<(1<<n))-1);
 
@@ -363,9 +392,10 @@ public:
 
     void dp_init(int n, datatype the_data)
     {
-        memset(vis, 0, sizeof(vis));
-        memset(dp_w, 63, sizeof(dp_w));
-        memset(dp_h, 63, sizeof(dp_h));
+        initialize_local_optimal_search();
+//        memset(vis, 0, sizeof(vis));
+//        memset(dp_w, 63, sizeof(dp_w));
+//        memset(dp_h, 63, sizeof(dp_h));
         dp_ret ret = rek(n, &the_data, (1<<(1<<n))-1);
 
         //the_data.printData("data");
