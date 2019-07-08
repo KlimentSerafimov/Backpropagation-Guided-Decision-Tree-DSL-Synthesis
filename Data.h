@@ -1084,14 +1084,17 @@ public:
     double size = -1;
     int num_solutions = -1;
 
+    string decision_tree_in_string;
+
     DecisionTreeScore()
     {
 
     }
 
-    DecisionTreeScore(double _size)
+    DecisionTreeScore(double _size, string _decision_tree_in_string)
     {
         size = _size;
+        decision_tree_in_string = _decision_tree_in_string;
     }
 
     bool operator < (const DecisionTreeScore& other) const

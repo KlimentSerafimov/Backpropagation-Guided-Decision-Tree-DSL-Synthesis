@@ -16,9 +16,12 @@ public:
         int w;
         int w_root;
 
+
+
         int h;
         int h_root;
 
+        vector<string> dt_strings;
         int num_solutions;
 
         void init()
@@ -28,8 +31,11 @@ public:
             num_solutions = 0;
         }
 
-        void update(dp_ret left, dp_ret right, int mask_used)
+        void update(dp_ret left, dp_ret right, int mask_used, int track_num_strings)
         {
+            assert(track_num_string == -1);
+
+            bool update_dt_strings = false;
             if(left.w + right.w + 1 < w)
             {
                 w = left.w + right.w+1;
@@ -40,12 +46,28 @@ public:
                 h_root = mask_used;
 
                 num_solutions = left.num_solutions*right.num_solutions;
+                update_dt_strings = true;
+                dt_strings.clear()
                 assert(num_solutions < (1<<15));
             }
             else if(left.w + right.w + 1 == w)
             {
                 num_solutions += left.num_solutions*right.num_solutions;
+                update_dt_strings = true;
+
                 assert(num_solutions < (1<<15));
+            }
+
+            if(update_dt_strings)
+            {
+
+                for(int i = 0; i < left.dt_strings; i++)
+                {
+                    for(int j = 0; j < right.dt_strings; j++)
+                    {
+                        dt_strings.pb("(mask_used="+to_string(mask_used) + " left=" + left[i] + " right=" + right[i]);
+                    }
+                }
             }
             /*if(max(left.h, right.h)+1 < h)
             {
@@ -237,7 +259,7 @@ public:
     DecisionTreeScore synthesize_decision_tree_and_get_size
             (net::parameters param, int n, datatype the_data, DecisionTreeSynthesiserType synthesizer_type)
     {
-        DecisionTreeScore ret = DecisionTreeScore(synthesizer_type);
+        DecisionTreeScore ret = DecisionTreeScore();
 
         if(synthesizer_type == optimal)
         {
