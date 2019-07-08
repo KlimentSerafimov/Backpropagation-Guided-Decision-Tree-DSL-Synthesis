@@ -1084,7 +1084,7 @@ public:
     double size = -1;
     int num_solutions = -1;
 
-    string decision_tree_in_string;
+    vector<string> dt_strings;
 
     DecisionTreeScore()
     {
@@ -1094,7 +1094,7 @@ public:
     DecisionTreeScore(double _size, string _decision_tree_in_string)
     {
         size = _size;
-        decision_tree_in_string = _decision_tree_in_string;
+        dt_strings.pb(_decision_tree_in_string);
     }
 
     bool operator < (const DecisionTreeScore& other) const

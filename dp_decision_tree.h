@@ -13,6 +13,8 @@ class dp_decision_tree
 public:
     struct dp_ret
     {
+        bool vis;
+
         int w;
         int w_root;
 
@@ -24,8 +26,19 @@ public:
         vector<string> dt_strings;
         int num_solutions;
 
+        void init(int _w, int _h, int _w_root, int _h_root, int _num_solutions)
+        {
+            vis = true;
+            w = _w,
+            h = _h,
+            w_root = _w_root,
+            h_root = _h_root,
+            num_solutions = _num_solutions;
+        }
+
         void init()
         {
+            vis = false;
             w = (1<<30);
             h = (1<<30);
             num_solutions = 0;
@@ -33,7 +46,7 @@ public:
 
         void update(dp_ret left, dp_ret right, int mask_used, int track_num_strings)
         {
-            assert(track_num_string == -1);
+            assert(track_num_strings == -1);
 
             bool update_dt_strings = false;
             if(left.w + right.w + 1 < w)
@@ -76,33 +89,33 @@ public:
             }*/
         }
 
-        void update(
-                int mask,
-                int *dp_w,
-                int *dp_w_root,
-
-                int *dp_h,
-                int *dp_h_root,
-
-                int *dp_num_solutions
-        )
-        {
-            if(w<dp_w[mask])
-            {
-                dp_w[mask] = w;
-                dp_w_root[mask] = w_root;
-
-                dp_h[mask] = h;
-                dp_h_root[mask] = h_root;
-
-                dp_num_solutions[mask] = num_solutions;
-            }
-            /*if(h<dp_h[mask])
-            {
-                dp_h[mask] = h;
-                dp_h_root[mask] = h_root;
-            }*/
-        }
+//        void update(
+//                int mask,
+//                int *dp_w,
+//                int *dp_w_root,
+//
+//                int *dp_h,
+//                int *dp_h_root,
+//
+//                int *dp_num_solutions
+//        )
+//        {
+//            if(w<dp_w[mask])
+//            {
+//                dp_w[mask] = w;
+//                dp_w_root[mask] = w_root;
+//
+//                dp_h[mask] = h;
+//                dp_h_root[mask] = h_root;
+//
+//                dp_num_solutions[mask] = num_solutions;
+//            }
+//            /*if(h<dp_h[mask])
+//            {
+//                dp_h[mask] = h;
+//                dp_h_root[mask] = h_root;
+//            }* /
+//        }
         string print()
         {
             string ret = "w = " + to_string(w) + " h = "+ to_string(h);
@@ -110,15 +123,15 @@ public:
         }
     };
 
-    bool vis[(1<<16)];
-
-    int dp_w[(1<<16)];
-    int dp_w_root[(1<<16)];
-
-    int dp_h[(1<<16)];
-    int dp_h_root[(1<<16)];
-
-    int dp_num_solutions[(1<<16)];
+//    bool vis[(1<<16)];
+//
+//    int dp_w[(1<<16)];
+//    int dp_w_root[(1<<16)];
+//
+//    int dp_h[(1<<16)];
+//    int dp_h_root[(1<<16)];
+//
+//    int dp_num_solutions[(1<<16)];
 
     dp_ret dp_data[1<<16];
 
@@ -126,9 +139,9 @@ public:
     dp_ret rek(int n, datatype *the_data, int mask)
     {
         assert(mask < (1<<16));
-        if(!vis[mask])
+        if(!dp_data[mask].vis)
         {
-            vis[mask] = true;
+            dp_data[mask].vis = true;
             if(the_data->is_constant())
             {
                 bit_signature out  = 0;
@@ -141,9 +154,7 @@ public:
                         assert(out == the_data->out[i][0]);
                     }
                 }
-                dp_w[mask] = dp_h[mask] = 1;
-                dp_w_root[mask] = dp_w_root[mask] = mask;
-                dp_num_solutions[mask] = 1;
+                dp_data[mask].init(1, 1, mask, mask, 1);
             }
             else
             {
@@ -190,7 +201,7 @@ public:
                     dp_ret left_ret = rek(n, &left, left_mask);
                     dp_ret right_ret = rek(n, &right, right_mask);
 
-                    ret.update(left_ret, right_ret, left_mask);
+                    ret.update(left_ret, right_ret, left_mask, -1);
 
                 }
 
@@ -205,11 +216,12 @@ public:
 
                 vector<operator_signature> operators = the_data->get_operators(active_pairs);
                 */
-                ret.update(mask, dp_w, dp_w_root, dp_h, dp_h_root, dp_num_solutions);
+                //ret.update(mask, dp_w, dp_w_root, dp_h, dp_h_root, dp_num_solutions);
+                dp_data[mask] = ret;
             }
         }
 
-        return dp_ret{dp_w[mask], dp_w_root[mask], dp_h[mask], dp_h_root[mask], dp_num_solutions[mask]};
+        return dp_data[mask];
     }
 
     void print_tree(int n, int mask, int t)
@@ -276,6 +288,7 @@ public:
 
                 ret.size = opt.w;
                 ret.num_solutions = opt.num_solutions;
+                ret.dt_strings = opt.dt_strings;
             }
             else
             {

@@ -305,7 +305,8 @@ public:
     }
 };
 
-DecisionTreeScore get_opt_size_of_decision_tree(int n, int f)
+
+DecisionTreeScore get_opt_decision_tree_score(int n, int f)
 {
     Data new_data;
     new_data.init_exaustive_table_with_unary_output(n, f);
@@ -321,16 +322,11 @@ DecisionTreeScore get_opt_size_of_decision_tree(int n, int f)
 
 void print_decision_tree_of_f(int n, int f)
 {
-    Data new_data;
-    new_data.init_exaustive_table_with_unary_output(n, f);
-
-    dp_decision_tree<Data> decision_tree_solver;
-    DecisionTreeScore size_opt;
-    net::parameters cutoff_parametes;
-    size_opt = decision_tree_solver.synthesize_decision_tree_and_get_size
-            (cutoff_parametes, n, new_data, optimal);
-
-    return size_opt;
+    DecisionTreeScore score = get_opt_decision_tree_score(n, f);
+    for(int i = 0;i<score.dt_strings.size();i++) {
+        cout << "dt=" << score.dt_strings[i] << " ";
+    }
+    cout << endl;
 }
 
 vector<f_and_score> get_smallest_f(int n)
@@ -348,13 +344,22 @@ vector<f_and_score> get_smallest_f(int n)
 
     for(int i = 0;i<fs.size();i++)
     {
-        ordering.pb(f_and_score(fs[i], get_opt_size_of_decision_tree(n, fs[i])));
+        ordering.pb(f_and_score(fs[i], get_opt_decision_tree_score(n, fs[i])));
     }
 
     //sort_v(ordering);
 
     return ordering;
 
+}
+
+void print_all_dt_strings(int n)
+{
+    assert(n <= 4);
+    for(int i = 0; i < (1<<(1<<n)); i++)
+    {
+        print_decision_tree_of_f(n, i);
+    }
 }
 
 firstOrderDataset<DataAndScore> init_random_test_set(int n)
@@ -399,7 +404,7 @@ firstOrderDataset<DataAndScore> init_random_test_set(int n)
         long long sample_id = (first + second);
 
         //cout << first << " " << second << " "<< sample_id << endl;
-        sample_ids.pb(f_and_score(sample_id, get_opt_size_of_decision_tree(n, sample_id)));
+        sample_ids.pb(f_and_score(sample_id, get_opt_decision_tree_score(n, sample_id)));
     }
 
     //test
@@ -629,7 +634,7 @@ firstOrderDataset<DataAndScore> init_smallest_train_set(int n)
             long long sample_id = (first + second);
 
             //cout << first << " " << second << " "<< sample_id << endl;
-            sample_ids.pb(f_and_score(sample_id, get_opt_size_of_decision_tree(n, sample_id)));
+            sample_ids.pb(f_and_score(sample_id, get_opt_decision_tree_score(n, sample_id)));
         }
     }
     else
@@ -2426,6 +2431,10 @@ public:
 
 int main()
 {
+
+    print_all_dt_strings(3);
+    return 0;
+
     //srand(time(0));
     clock_t count = clock();
     graph_plotter worker;
