@@ -1,0 +1,73 @@
+    class solution_score_old: public net
+    {
+    public:
+
+        double error;
+
+        int max_train_iter = 0;
+        int sum_train_iter = 0;
+
+        int num_train_fail = 0;
+
+        bool is_init_score = true;
+
+        solution_score_old(){}
+
+        solution_score_old(net self): net(self)
+        {
+
+        }
+
+        operator double() const
+        {
+            return max_train_iter;
+        }
+
+        bool operator < (solution_score_old &other) const
+        {
+            if(is_init_score)
+            {
+                return false;
+            }
+            if(other.is_init_score)
+            {
+                return true;
+            }
+            if(num_train_fail == 0 && other.num_train_fail == 0)
+            {
+                if(max_train_iter != other.max_train_iter)
+                {
+                    return max_train_iter < other.max_train_iter;
+                }
+                else
+                {
+                    return sum_train_iter < other.sum_train_iter;
+                }
+            }
+            else
+            {
+                if(num_train_fail != other.num_train_fail)
+                {
+                    return num_train_fail < other.num_train_fail;
+                }
+                else
+                {
+                    return sum_train_iter < other.sum_train_iter;
+                }
+            }
+        }
+
+        bool has_value()
+        {
+            return num_train_fail == 0;
+        }
+
+        string print()
+        {
+            if(!has_value())
+            {
+                return "no value bc " + to_string(num_train_fail) + " fails";
+            }
+            return to_string(max_train_iter) +" "+to_string(sum_train_iter);
+        }
+    };

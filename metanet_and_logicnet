@@ -1,0 +1,2674 @@
+class edge
+{
+public:
+    int from;
+    int to;
+    edge(int _from, int _to)
+    {
+        from = _from;
+        to = _to;
+    }
+};
+
+class origin
+{
+public:
+    string origin_label;
+
+    string code;
+    bool is_code_generated;
+
+    bool has_local_id;
+    int local_id;
+
+    bool hardbits;
+
+    bool is_input_node;
+    bool is_output_node;
+
+    bool is_specification_node;
+    bool is_specific_not_node;
+
+    bool is_analogy_node;
+
+    bool is_not_node;
+    bool is_combine_node;
+    bool is_generalization_node;
+
+    int operand;
+    vector<int> operands;
+
+    origin & operator=(const origin &rhs)
+    {
+        origin_label = rhs.origin_label;
+
+        code = rhs.code;
+        is_code_generated = rhs.is_code_generated;
+
+        has_local_id = rhs.has_local_id;
+        local_id = rhs.local_id;
+
+        hardbits = rhs.hardbits;
+
+        is_input_node = rhs.is_input_node;
+        is_output_node = rhs.is_output_node;
+
+        is_specification_node = rhs.is_specification_node;
+        is_specific_not_node = rhs.is_specific_not_node;
+
+        is_specification_node = rhs.is_specification_node;
+        is_specific_not_node = rhs.is_specific_not_node;
+
+        is_not_node = rhs.is_not_node;
+        is_combine_node = rhs.is_combine_node;
+        is_generalization_node = rhs.is_generalization_node;
+
+        operand = rhs.operand;
+        operands = rhs.operands;
+        return *this;
+    }
+
+    void init()
+    {
+        origin_label = "";
+
+        code = "";
+        is_code_generated = false;
+
+        has_local_id = false;
+        local_id = -1;
+
+        hardbits = false;
+
+        is_input_node = false;
+        is_output_node = false;
+
+        is_specification_node = false;
+        is_specific_not_node = false;
+
+        is_analogy_node = false;
+
+
+        is_not_node = false;
+        is_combine_node = false;
+        is_generalization_node = false;
+
+        operand = -1;
+        assert(operands.size()==0);
+    }
+    void init(string _origin_label)
+    {
+        init();
+        origin_label = _origin_label;
+        if(origin_label == "in_bit")
+        {
+            is_input_node = true;
+        }
+        else if(origin_label == "out_bit")
+        {
+            is_output_node = true;
+        }
+        else if(origin_label == "is")
+        {
+            is_specification_node = true;
+        }
+        else if(origin_label == "!is")
+        {
+            is_not_node = true;
+            is_specific_not_node = true;
+        }
+        else if(origin_label == "hardcode")
+        {
+            hardbits = true;
+        }
+        else if(origin_label == "analogy")
+        {
+            is_analogy_node = true;
+        }
+        else if(origin_label == "!")
+        {
+            is_not_node = true;
+        }
+        else if(origin_label == "compress")
+        {
+            is_analogy_node = true;
+        }
+        else if(origin_label == "specialize")
+        {
+            is_specification_node = true;
+        }
+        else if(origin_label == "combine")
+        {
+            is_combine_node = true;
+        }
+        else if(origin_label == "generalize")
+        {
+            is_generalization_node = true;
+        }
+        else
+        {
+            cout <<origin_label<<endl;
+            assert(0);
+        }
+    }
+    void init(pair<string, int> _code_local_id)
+    {
+        init(_code_local_id.first);
+        local_id = _code_local_id.second;
+        has_local_id = true;
+    }
+    void end_init()
+    {
+
+    }
+    origin(){init();}
+    origin(string _code){init(_code);end_init();}
+    origin(pair<string, int> _code_local_id){init(_code_local_id);end_init();}
+    origin(string _code, int _operand)
+    {
+        init(_code);
+        operands.pb(_operand);
+        end_init();
+    }
+    origin(string _code, vector<int> _operands)
+    {
+        init(_code);
+        operands = _operands;
+        end_init();
+    }
+
+    origin(pair<string, int> _code_local_id, int _operand)
+    {
+        init(_code_local_id);
+        operand = _operand;
+        operands.pb(operand);
+        end_init();
+    }
+
+    string get_origin_label()
+    {
+        string ret = origin_label;
+        if(has_local_id)
+        {
+            if(hardbits)
+            {
+                ret+="_"+toBinaryString(local_id);
+            }
+            else
+            {
+                ret +="_"+toDecimalString(local_id);
+            }
+        }
+        else
+        {
+
+        }
+        return ret;
+    }
+};
+
+class computation
+{
+public:
+    string operation_label;
+
+    int num_inputs;
+    int judge;
+
+    bool has_logic_input;
+    bool has_logic_output;
+    bool is_and_node;
+    bool is_or_node;
+
+    bool is_equals_node;
+    bool is_different_node;
+
+    bool is_read_node;
+
+
+    string code;
+    bool is_code_generated;
+
+    computation & operator=(const computation &rhs)
+    {
+        operation_label = rhs.operation_label;
+
+        num_inputs = rhs.num_inputs;
+
+        judge = rhs.judge;
+
+        has_logic_output = rhs.has_logic_output;
+        has_logic_input = rhs.has_logic_input;
+        is_and_node = rhs.is_and_node;
+        is_or_node = rhs.is_or_node;
+
+        is_equals_node = rhs.is_equals_node;
+        is_different_node = rhs.is_different_node;
+
+        is_read_node = rhs.is_read_node;
+
+        code = rhs.code;
+        is_code_generated = rhs.is_code_generated;
+        return *this;
+    }
+
+    void init()
+    {
+        operation_label = "";
+
+        num_inputs = 0;
+        judge = 0;
+
+        has_logic_input = false;
+        has_logic_output = false;
+        is_and_node = false;//todo
+        is_or_node = false;//todo
+
+        is_equals_node = false;
+        is_different_node = false;
+
+
+        is_read_node = false;
+
+        is_code_generated = false;
+    }
+
+    computation()
+    {
+        init();
+    }
+    void init(string _operation_label)
+    {
+        init();
+        operation_label = _operation_label;
+        code = operation_label;
+        is_code_generated = true;
+        if(operation_label=="==")
+        {
+            is_equals_node = true;
+        }
+        else if(operation_label=="!=")
+        {
+            is_different_node = true;
+        }
+        else if(operation_label=="or")
+        {
+            is_or_node = true;
+            judge = 1;
+        }
+        else if(operation_label=="and")
+        {
+            is_and_node = true;
+            judge = 0;
+        }
+        else if(operation_label=="read")
+        {
+            is_read_node = true;
+        }
+        else
+        {
+            assert(0);
+        }
+        has_logic_output = is_equals_node||is_or_node||is_and_node;
+        has_logic_input = is_or_node||is_and_node;
+    }
+    computation(string _operation_label, int _judge)
+    {
+        assert(_operation_label == "=="||_operation_label=="!=");
+        init(_operation_label);
+        judge = _judge;
+    }
+    computation(string _operation_label)
+    {
+        init(_operation_label);
+    }
+    string get_operation()
+    {
+        return operation_label;
+    }
+    computation inverse_operation()
+    {
+        assert(is_or_node+is_and_node == 1);
+        if(is_or_node)
+        {
+            return computation("and");
+        }
+        if(is_and_node)
+        {
+            return computation("or");
+        }
+        assert(0);
+        return computation("");//shouldn't happen
+    }
+    computation same_operation()
+    {
+        assert(is_or_node+is_and_node == 1);
+        return operation_label;
+    }
+    void assertLogicNode(computation *to_check)
+    {
+        assert(to_check->is_or_node+to_check->is_and_node == 1);
+    }
+    bool is_same_operation(computation rhs)
+    {
+        assertLogicNode(this);
+        assertLogicNode(&rhs);
+        return is_or_node == rhs.is_or_node;
+    }
+    void update_operation(computation rhs)
+    {
+        assertLogicNode(this);
+        assertLogicNode(&rhs);
+        operation_label = rhs.operation_label;
+        is_code_generated = false;
+        is_or_node = rhs.is_or_node;
+        is_and_node = rhs.is_and_node;
+        if(is_or_node)
+        {
+            judge = 1;
+        }
+        else if(is_and_node)
+        {
+            judge = num_inputs;
+        }
+    }
+    void addEdge()
+    {
+        is_code_generated = false;
+        num_inputs++;
+        if(is_and_node)
+        {
+            judge++;
+        }
+    }
+    void removeEdge()
+    {
+        num_inputs--;
+        assert(num_inputs>=0);
+        judge = max(judge-1.0, 1.0);
+        is_code_generated = false;
+    }
+
+};
+
+class node
+{
+public:
+    int id;
+    vector<int> edges_in;
+
+    double output;
+    int memmo_iteration;
+
+    int not_id;
+
+    origin lineage;
+
+    computation compute;
+
+    int specialize_itteration;
+    int not_specialize_itteration;
+    int specialize_count;
+
+    void init()
+    {
+        id = -1;
+        not_id = -1;
+        memmo_iteration = -1;
+        output = -1;
+        lineage.code = "undefined";
+        specialize_itteration = -1;
+        not_specialize_itteration = -1;
+        specialize_count = 0;
+    }
+    node(){init();}
+    node(int _id){init(_id);}
+    void init(int _id)
+    {
+        init();
+        id = _id;
+    }
+    void init(int _id, computation _compute, origin _lineage)
+    {
+        init(_id);
+        assert(_compute.is_code_generated);
+        compute = _compute;
+        assert(compute.is_code_generated);
+        lineage = _lineage;
+    }
+    node(int _id, computation _compute, origin _lineage)
+    {
+        init(_id, _compute, _lineage);
+    }
+    void addInputEdge(int new_edge_id)
+    {
+        edges_in.pb(new_edge_id);
+        compute.addEdge();
+        assert(compute.num_inputs == edges_in.size());
+    }
+    void removeEdge(int edge_id)
+    {
+        assert(find(edges_in.begin(), edges_in.end(), edge_id)!=edges_in.end());
+        edges_in.erase(remove(edges_in.begin(), edges_in.end(), edge_id), edges_in.end());
+        compute.removeEdge();
+        assert(compute.num_inputs == edges_in.size());
+    }
+    void setOutput(int value, int iteration)
+    {
+        memmo_iteration = iteration;
+        output = value;
+    }
+    void updateCompute(string new_operation, vector<string> operands)
+    {
+        assert(0);
+    }
+    string get_operation()
+    {
+        return compute.get_operation();
+    }
+
+};
+
+bool printlineage = true;
+
+class metaNet
+{
+
+public:
+    int n;
+    vector<node> nodes;
+
+    vector<edge> edges;
+
+    vector<int> inputNodes;
+    vector<int> outputNodes;
+
+    vector<vector<int> > net;
+
+    vector<int> v_init_net;
+
+    int iteration;
+    metaNet()
+    {
+        iteration = 0;
+        n = 0;
+        specialize_itteration = 0;
+    }
+    int return_and_increment(int &number)
+    {
+        net.pb(v_init_net);
+        int ret = number;
+        number++;
+        return ret;
+    }
+
+    int initNode(computation compute, origin lineage)
+    {
+        nodes.pb(node(n, compute, lineage));
+        return return_and_increment(n);
+    }
+
+    string fullcode(int node_id)
+    {
+        bool tmp = printlineage;
+        printlineage = true;
+        pair<string, string> parts = generatecode(node_id, true);
+        string ret;
+        ret+=parts.f;
+        if(parts.f!=""&&parts.s!="")ret+="<=";
+        ret+=parts.s;
+        printlineage = tmp;
+        return ret;
+    }
+
+    pair<string, string> generatecode(int node_id, bool returnlineage)
+    {
+        assertNode(node_id);
+        string lineage = "";
+
+        if((returnlineage||nodes[node_id].lineage.is_input_node)&&!nodes[node_id].lineage.hardbits)
+        {
+            if(nodes[node_id].lineage.is_code_generated)
+            {
+                lineage = nodes[node_id].lineage.code;
+            }
+            else
+            {
+                lineage+=toDecimalString(node_id);
+                lineage+="::";
+                lineage += nodes[node_id].lineage.get_origin_label();
+                if(nodes[node_id].lineage.operands.size()>0)
+                {
+                    lineage+="[";
+                    for(int i=0;i<nodes[node_id].lineage.operands.size();i++)
+                    {
+                        if(i!=0)
+                        {
+                            lineage+=";";
+                        }
+                        assert(node_id!=nodes[node_id].lineage.operands[i]);
+                        pair<string, string> tmp;
+                        if(!nodes[nodes[node_id].lineage.operands[i]].lineage.is_input_node)
+                        {
+                            tmp.f = toDecimalString(nodes[node_id].lineage.operands[i]);
+                        }
+                        else
+                        {
+                            tmp = generatecode(nodes[node_id].lineage.operands[i], printlineage);
+                        }
+                        lineage+=tmp.f;
+                        if(tmp.f!=""&&tmp.s!="")lineage+="<=";
+                        lineage+=tmp.s;
+                    }
+                    lineage+="]";
+                }
+                nodes[node_id].lineage.code = lineage;
+                nodes[node_id].lineage.is_code_generated = true;
+            }
+        }
+        string computation = "";
+        if(nodes[node_id].compute.has_logic_input)
+        {
+
+            if(nodes[node_id].compute.is_code_generated)
+            {
+                computation = nodes[node_id].compute.code;
+            }
+            else
+            {
+                computation+=nodes[node_id].get_operation();
+                vector<pair<bool, pair<int, int> > >  labels;
+                string components = "";
+                for(int i=0;i<nodes[node_id].edges_in.size();i++)
+                {
+                    if(i!=0)
+                    {
+                        components+=",";
+                    }
+                    int prev_node_id = edges[nodes[node_id].edges_in[i]].from;
+                    pair<string, string> tmp = generatecode(prev_node_id, printlineage);
+                    components += tmp.f;
+                    if(tmp.f!=""&&tmp.s!="")components+="<=";
+                    components+=tmp.s;
+                    if(nodes[prev_node_id].lineage.operands.size()>0&&nodes[prev_node_id].lineage.has_local_id)
+                    {
+                        labels.pb(mp(nodes[prev_node_id].lineage.is_specification_node||nodes[prev_node_id].lineage.is_specific_not_node,
+                                     mp(nodes[prev_node_id].lineage.local_id+1*(!nodes[prev_node_id].compute.is_equals_node),
+                                        nodes[nodes[prev_node_id].lineage.operand].lineage.local_id)));
+                    }
+                }
+                sort_v(labels);
+                if(labels.size()>0&&labels.size()==nodes[node_id].edges_in.size()&&labels[0].f && labels[labels.size()-1].f)
+                {
+                    vector<int> tmp;
+                    components = "";
+                    for(int i=0;i<inputNodes.size();i++)
+                    {
+                        components+="_";
+                    }
+                    for(int i=0;i<labels.size();i++)
+                    {
+                        tmp.pb(labels[i].s.f);
+                        components[labels[i].s.s] = (labels[i].s.f+'0');
+                    }
+                    computation += "<"+components+">";
+                }
+                else
+                {
+                    computation += "("+components+")";
+                }
+                nodes[node_id].compute.code = computation;
+                nodes[node_id].compute.is_code_generated = true;
+            }
+        }
+        return mp(lineage, computation);
+    }
+    void init(int numInputs, int numOutputs)
+    {
+        assert(numInputs>0&&numOutputs>0);
+        for(int i=0;i<numInputs;i++)
+        {
+            inputNodes.pb(initNode(computation("read"), origin(mp("in_bit", i))));
+        }
+        for(int i=0;i<numOutputs;i++)
+        {
+            string code = toDecimalString(i);
+            outputNodes.pb(initNode(computation("or"), origin(mp("out_bit", i))));
+        }
+    }
+    int addEdge(int from, int to)
+    {
+        assertNode(from);
+        assertNode(to);
+        net[from].pb(edges.size());
+        nodes[to].addInputEdge(edges.size());
+        int ret_edge_id = edges.size();
+        edges.pb(edge(from, to));
+        return ret_edge_id;
+    }
+    void remove_edge(int edge_id)
+    {
+        int node_id_from = edges[edge_id].from;
+        int node_id_to = edges[edge_id].to;
+        printNodes = true;
+        printlineage = true;
+        net[node_id_from].erase(remove(net[node_id_from].begin(), net[node_id_from].end(), edge_id), net[node_id_from].end());
+        nodes[node_id_to].removeEdge(edge_id);
+    }
+    void addEdges_out(int node_id, vector<int> to)
+    {
+        for(int i=0;i<to.size();i++)
+        {
+            addEdge(node_id, to[i]);
+        }
+    }
+    void addEdges_in(vector<int> from, int newNode_id)
+    {
+        for(int i = 0; i<from.size();i++)
+        {
+            addEdge(nodes[from[i]].id, newNode_id);
+        }
+    }
+
+    void set_nots(int node_id, int not_node_id)
+    {
+        nodes[node_id].not_id = not_node_id;
+        nodes[not_node_id].not_id = node_id;
+    }
+    void add_hardcode_node(vector<bit_signature> input_values, vector<bit_signature> output_values)
+    {
+        assert(inputNodes.size()==input_values.size()&&outputNodes.size()==output_values.size());
+        vector<int> from_node_ids;
+        for(int i=0;i<inputNodes.size();i++)
+        {
+            assert(input_values[i]==0||input_values[i]==1);
+            bool exists = false;
+            for(int j=0;j<net[inputNodes[i]].size();j++)
+            {
+                int case_node = edges[net[inputNodes[i]][j]].to;
+                if(nodes[case_node].compute.is_equals_node&&nodes[case_node].compute.judge == input_values[i])
+                {
+                    assert(!exists);
+                    from_node_ids.pb(case_node);
+                    exists = true;
+                }
+                else if(nodes[case_node].compute.is_different_node&&nodes[case_node].compute.judge != input_values[i])
+                {
+                    assert(!exists);
+                    from_node_ids.pb(case_node);
+                    exists = true;
+                }
+            }
+            if(!exists)
+            {
+                int new_case_node = initNode(computation("==", input_values[i]), origin(mp("is", input_values[i]), inputNodes[i]));
+                addEdge(inputNodes[i], new_case_node);
+                int new_not_case_node = initNode(computation("!=", input_values[i]), origin(mp("!is", input_values[i]), inputNodes[i]));
+                addEdge(inputNodes[i], new_not_case_node);
+                set_nots(new_case_node, new_not_case_node);
+                from_node_ids.pb(new_case_node);
+            }
+        }
+
+        int hardcode_if_node_id = initNode(computation("and"), origin("hardcode"));
+        addEdges_in(from_node_ids, hardcode_if_node_id);
+
+        vector<int> to_node_ids;
+        for(int i=0;i<output_values.size();i++)
+        {
+            assert(output_values[i]==0||output_values[i]==1);
+            if(output_values[i]==1)
+            {
+                to_node_ids.pb(outputNodes[i]);
+            }
+        }
+        int hardcode_then_node_id = find_node_given_to(to_node_ids);
+        if(hardcode_then_node_id == -1)
+        {
+            hardcode_then_node_id = initNode(computation("or"), origin("analogy"));
+            addEdges_out(hardcode_then_node_id, to_node_ids);
+        }
+        addEdge(hardcode_if_node_id, hardcode_then_node_id);
+    }
+    int find_node_given_to(vector<int> to)
+    {
+        map<int, int> candidate_ids;
+        for(int i=0;i<to.size();i++)
+        {
+            for(int j = 0;j<nodes[to[i]].edges_in.size();j++)
+            {
+                int candidate_id = edges[nodes[to[i]].edges_in[j]].from;
+                candidate_ids[candidate_id]++;
+            }
+        }
+        int ret = -1;
+        for( map<int, int>::iterator it = candidate_ids.begin();it!=candidate_ids.end();it++)
+        {
+            if((*it).s==to.size()&&net[(*it).f].size()==to.size())
+            {
+                assert(ret == -1);
+                ret = (*it).f;
+            }
+        }
+        return ret;
+    }
+    int find_node_from(vector<int> from, computation compute)
+    {
+        map<int, int> candidate_ids;
+        for(int i=0;i<from.size();i++)
+        {
+            for(int j=0;j<net[from[i]].size();j++)
+            {
+                int candidate_id = edges[net[from[i]][j]].to;
+                if(nodes[candidate_id].compute.is_same_operation(compute))
+                    candidate_ids[candidate_id]++;
+            }
+        }
+        int ret = -1;
+        for( map<int, int>::iterator it = candidate_ids.begin();it!=candidate_ids.end();it++)
+        {
+            if((*it).s==from.size()&&nodes[(*it).f].edges_in.size()==from.size())
+            {
+                if(ret!=-1)
+                {
+                    cleanCode(fullcode(ret));
+                    cleanCode(fullcode((*it).f));
+                }
+                assert(ret == -1);
+                ret = (*it).f;
+            }
+        }
+        return ret;
+    }
+    void assertEdge(int edge_id)
+    {
+        assert(0<=edge_id&&edge_id<edges.size());
+    }
+    void updateEdge(int edge_id, int newFrom, int newTo)
+    {
+        assertNode(newFrom);
+        assertNode(newTo);
+        assertEdge(edge_id);
+        if(edges[edge_id].from != newFrom)
+        {
+            int node_id_from = edges[edge_id].from;
+            int node_id_to = edges[edge_id].to;
+
+            net[node_id_from].erase(remove(net[node_id_from].begin(), net[node_id_from].end(), edge_id), net[node_id_from].end());
+
+            edges[edge_id].from = newFrom;
+            net[newFrom].pb(edge_id);
+        }
+        if(edges[edge_id].to != newTo)
+        {
+            cout << "not tested"<<endl;;
+            assert(0);
+            int node_id_to = edges[edge_id].to;
+            nodes[node_id_to].edges_in.erase(remove(nodes[node_id_to].edges_in.begin(), nodes[node_id_to].edges_in.end(), edge_id), nodes[node_id_to].edges_in.end());
+            edges[edge_id].to = newTo;
+            nodes[newTo].edges_in.pb(edge_id);
+        }
+    }
+
+
+    void assertNode(int node_id)
+    {
+        assert(0<=node_id&&node_id<n);
+    }
+
+    void add_not(int node_id)
+    {
+        assertNode(node_id);
+        if(nodes[node_id].not_id!=-1)
+        {
+            return;
+        }
+        if(!nodes[node_id].compute.has_logic_input)
+        {
+            return;
+        }
+        vector<int> from_not_ids;
+        for(int i=0;i<nodes[node_id].edges_in.size();i++)
+        {
+            int prev_node_id = edges[nodes[node_id].edges_in[i]].from;
+
+            if(nodes[prev_node_id].not_id==-1)
+            {
+                add_not(prev_node_id);
+            }
+            assert(nodes[prev_node_id].not_id != -1);
+            from_not_ids.pb(nodes[prev_node_id].not_id);
+        }
+        int not_node_id = find_node_from(from_not_ids, nodes[node_id].compute.inverse_operation());
+        if(not_node_id == -1)
+        {
+            not_node_id = initNode(nodes[node_id].compute.inverse_operation(), origin("!", node_id));
+            addEdges_in(from_not_ids, not_node_id);
+        }
+        nodes[node_id].not_id = not_node_id;
+        nodes[not_node_id].not_id = node_id;
+    }
+    void generalize(int node_id)
+    {
+        if(nodes[node_id].edges_in.size()<=1)
+        {
+            return;
+        }
+        vector<vector<int> > find_overlap_from_ids;
+        vector<int> prev_nodes_ids;
+        vector<int> possibly_removable_edges_ids;
+        for(int i=0;i<nodes[node_id].edges_in.size();i++)
+        {
+            int edge_id = nodes[node_id].edges_in[i];
+            int prev_node_id = edges[edge_id].from;
+            if(!nodes[prev_node_id].lineage.is_input_node)
+            {
+                vector<int> prev_prev_nodes_ids;
+                for(int j=0;j<nodes[prev_node_id].edges_in.size();j++)
+                {
+                    int prev_prev_node_id = edges[nodes[prev_node_id].edges_in[j]].from;
+                    if(!nodes[prev_prev_node_id].lineage.is_input_node)
+                    {
+                        prev_prev_nodes_ids.pb(prev_prev_node_id);
+                    }
+                }
+                if(prev_prev_nodes_ids.size()>=1)
+                {
+                    sort_v(prev_prev_nodes_ids);
+                    find_overlap_from_ids.pb(prev_prev_nodes_ids);
+                    prev_nodes_ids.pb(prev_node_id);
+                    possibly_removable_edges_ids.pb(edge_id);
+                }
+            }
+        }
+        if(find_overlap_from_ids.size()<=1)
+        {
+            return;
+        }
+        vector<pair<vector<int>, pair<int, int> > > to_compress;
+        vector<pair<pair<int, pair<vector<int>, vector<int> > >, pair<int, int> > > to_generalize;
+        int count_c = 0;
+        for(int i=0;i<find_overlap_from_ids.size();i++)
+        {
+            for(int j=i+1;j<find_overlap_from_ids.size();j++)
+            {
+                vector<int> common;
+                vector<int> not_common;
+                pair<vector<int>, vector<int> > not_common_parts;
+                for(int k=0, l=0;k<find_overlap_from_ids[i].size()||l<find_overlap_from_ids[j].size();)
+                {
+                    count_c++;
+                    if(l==find_overlap_from_ids[j].size())
+                    {
+                        not_common.pb(find_overlap_from_ids[i][k]);
+                        not_common_parts.f.pb(find_overlap_from_ids[i][k]);
+                        k++;
+                    }
+                    else if(k==find_overlap_from_ids[i].size())
+                    {
+                        not_common.pb(find_overlap_from_ids[j][l]);
+                        not_common_parts.s.pb(find_overlap_from_ids[j][l]);
+                        l++;
+                    }
+                    else
+                    {
+                        if(find_overlap_from_ids[i][k]==find_overlap_from_ids[j][l])
+                        {
+                            common.pb(find_overlap_from_ids[i][k]);
+                            k++;
+                            l++;
+                        }
+                        else
+                        {
+                            if(find_overlap_from_ids[i][k]>find_overlap_from_ids[j][l])
+                            {
+                                not_common.pb(find_overlap_from_ids[j][l]);
+                                not_common_parts.s.pb(find_overlap_from_ids[j][l]);
+                                l++;
+                            }
+                            else
+                            {
+                                not_common.pb(find_overlap_from_ids[i][k]);
+                                not_common_parts.f.pb(find_overlap_from_ids[i][k]);
+                                k++;
+                            }
+                        }
+                    }
+                }
+                if(not_common.size()==2&&common.size()>=2)
+                {
+                    /*for(int i=0;i<not_common_parts.f.size();i++)
+                     {
+                     for(int j=0;j<not_common_pars.s.size();j++)
+                     {
+                     int node_a = not_common_parts[i];
+                     int node_b = not_common_parts[j];
+                     if(nodes[node_a].not_id==node_b)
+                     {
+                     assert(nodes[node_b].not_id == node_a);
+                     assert(nodes[prev_nodes_ids[i]].compute.is_and_node||nodes[node_id].compute.is_and_node);
+                     assert(nodes[prev_nodes_ids[i]].compute.is_or_node||nodes[node_id].compute.is_or_node);
+                     to_compress.pb(mp(mp(common, ))
+                     }
+                     }
+                     }*/
+                    if(nodes[not_common[0]].not_id == not_common[1])
+                    {
+                        to_compress.pb(mp(common, mp(possibly_removable_edges_ids[i], possibly_removable_edges_ids[j])));
+                    }
+
+                    if(nodes[prev_nodes_ids[i]].compute.is_same_operation(nodes[prev_nodes_ids[j]].compute)&&
+                       !nodes[prev_nodes_ids[i]].compute.is_same_operation(nodes[node_id].compute))
+                    {
+                        //cout << "(and < or, or) OR (or < and, and) " << endl;
+
+                    }
+                    else
+                    {
+                        //todo
+                        //cout << "(and < and, and) OR (or < or, or)"<<endl;
+
+                    }
+                }
+                else if(common.size()==1&&not_common.size()==2)
+                {
+                    if(nodes[prev_nodes_ids[i]].compute.is_same_operation(nodes[prev_nodes_ids[j]].compute)&&
+                       !nodes[prev_nodes_ids[i]].compute.is_same_operation(nodes[node_id].compute))
+                    {
+                        to_generalize.pb(mp(mp(common[0], not_common_parts),  mp(possibly_removable_edges_ids[i], possibly_removable_edges_ids[j])));
+                    }
+                    else
+                    {
+                        //todo
+                    }
+                }
+                else
+                {
+                    if(!nodes[prev_nodes_ids[i]].compute.is_same_operation(nodes[prev_nodes_ids[j]].compute))
+                    {
+                        //cout << "(o < x, y)  " << endl;
+
+                    }
+                    else
+                    {
+                        //cout << "(o < x, x )" << endl;
+                    }
+                }
+                //cout << "{ OPERAND1: "<< fullcode(prev_nodes_ids[i]) << endl <<  " OPERATION{" << fullcode(node_id) << "}" <<endl<<" OPERAND2: " << fullcode(prev_nodes_ids[j]) << "}"<<endl;
+            }
+        }
+        set<int> remove_edge_ids;
+        for(int i=0;i<to_compress.size();i++)
+        {
+            int removeEdge_id[2] = {to_compress[i].s.f, to_compress[i].s.s};
+            int case_node_id = edges[to_compress[i].s.f].to;
+
+            assert(edges[removeEdge_id[0]].to == edges[removeEdge_id[1]].to);
+
+            remove_edge_ids.insert(removeEdge_id[0]);
+            remove_edge_ids.insert(removeEdge_id[1]);
+
+            //remove_edge(removeEdge_id[0]);
+            //remove_edge(removeEdge_id[1]);
+
+            vector<int> generalizedNodes;
+            generalizedNodes.pb(edges[removeEdge_id[0]].from);
+            generalizedNodes.pb(edges[removeEdge_id[1]].from);
+
+            int newNode_id = find_node_from(to_compress[i].f, nodes[generalizedNodes[0]].compute.same_operation());
+            if(newNode_id == -1)
+            {
+                newNode_id = initNode(nodes[generalizedNodes[0]].compute.same_operation(), origin("compress", generalizedNodes));
+                addEdges_in(to_compress[i].f, newNode_id);
+            }
+
+            addEdge(newNode_id, case_node_id);
+
+        }
+        int dobreak = false;
+        for(int i=0;i<to_generalize.size();i++)
+        {
+            int removeEdge_id[2] = {to_generalize[i].s.f, to_generalize[i].s.s};
+
+            int common = to_generalize[i].f.f;
+
+            remove_edge_ids.insert(removeEdge_id[0]);
+            remove_edge_ids.insert(removeEdge_id[1]);
+
+            //remove_edge(removeEdge_id[0]);
+            //remove_edge(removeEdge_id[1]);
+
+            vector<int> generalizedNodes;
+            generalizedNodes.pb(edges[removeEdge_id[0]].from);
+            generalizedNodes.pb(edges[removeEdge_id[1]].from);
+
+            assert(!nodes[node_id].compute.is_same_operation(nodes[generalizedNodes[0]].compute));
+            assert(nodes[generalizedNodes[0]].compute.is_same_operation(nodes[generalizedNodes[1]].compute));
+
+            int part_a;
+            int part_b;
+            if(to_generalize[i].f.s.f.size()==1)
+            {
+                part_a = to_generalize[i].f.s.f[0];
+            }
+            else
+            {
+                assert(0);
+                part_a = find_node_from(to_generalize[i].f.s.f, nodes[generalizedNodes[0]].compute);
+                if(part_a==-1)
+                {
+                    part_a = initNode(nodes[generalizedNodes[0]].compute.same_operation(), origin("combine", generalizedNodes));
+                    addEdges_in(to_generalize[i].f.s.f, part_a);
+                }
+            }
+            if(to_generalize[i].f.s.s.size()==1)
+            {
+                part_b = to_generalize[i].f.s.s[0];
+            }
+            else
+            {
+                assert(0);
+                part_b = find_node_from(to_generalize[i].f.s.s, nodes[generalizedNodes[1]].compute);
+                if(part_b == -1)
+                {
+                    part_b = initNode(nodes[generalizedNodes[1]].compute.same_operation(), origin("combine", generalizedNodes));
+                    addEdges_in(to_generalize[i].f.s.s, part_b);
+                }
+            }
+
+
+            vector<int> parts;
+            parts.pb(part_a);
+            parts.pb(part_b);
+
+            int combine_node_id = find_node_from(parts, nodes[node_id].compute.same_operation());
+            if(combine_node_id==-1)
+            {
+                combine_node_id = initNode(nodes[node_id].compute.same_operation(), origin("combine", generalizedNodes));
+                addEdges_in(parts, combine_node_id);
+            }
+
+            vector<int> compressedExpression;
+            compressedExpression.pb(to_generalize[i].f.f);
+            compressedExpression.pb(combine_node_id);
+            int generalization_node_id;
+
+            generalization_node_id = find_node_from(compressedExpression, nodes[generalizedNodes[0]].compute.same_operation());
+            if(generalization_node_id == -1)
+            {
+                generalization_node_id = initNode(nodes[generalizedNodes[0]].compute.same_operation(), origin("generalize", generalizedNodes));
+                addEdges_in(compressedExpression, generalization_node_id);
+            }
+            bool do_add_edge = true;
+            for(int i=0;i<net[generalization_node_id].size();i++)
+            {
+                if(edges[net[generalization_node_id][i]].to == node_id)
+                {
+                    assert(do_add_edge);
+                    do_add_edge = false;
+                }
+            }
+            if(do_add_edge&&node_id!=generalization_node_id)
+            {
+                addEdge(generalization_node_id, node_id);
+            }
+            assert(node_id!=generalization_node_id);
+        }
+        for(set<int>::iterator it = remove_edge_ids.begin();it!=remove_edge_ids.end();it++)
+        {
+            remove_edge((*it));
+        }
+    }
+    int specialize_itteration;
+    void specialize(int node_id)
+    {
+        if(!nodes[node_id].compute.has_logic_input)
+        {
+            return ;
+        }
+        if(nodes[node_id].edges_in.size()==1)
+        {
+            return ;
+        }
+        add_not(node_id);
+        int not_node_id = nodes[node_id].not_id;
+        specialize_itteration++;
+        for(int i=0;i<nodes[not_node_id].edges_in.size();i++)
+        {
+            int not_operand_id = edges[nodes[not_node_id].edges_in[i]].from;
+            for(int j=0;j<net[not_operand_id].size();j++)
+            {
+                int not_covered_id = edges[net[not_operand_id][j]].to;
+                nodes[not_covered_id].not_specialize_itteration = specialize_itteration;
+            }
+        }
+        vector<int> to_specialize_ids;
+        vector<int> duplicates;
+        for(int i=0;i<nodes[node_id].edges_in.size();i++)
+        {
+            int prev_node_id = edges[nodes[node_id].edges_in[i]].from;
+            for(int j=0;j<net[prev_node_id].size();j++)
+            {
+                int next_node_id = edges[net[prev_node_id][j]].to;
+                if
+                    (
+                     next_node_id != node_id &&
+                     nodes[next_node_id].edges_in.size()>=2 &&
+                     nodes[node_id].compute.is_same_operation(nodes[next_node_id].compute)
+                     )
+                {
+                    if(nodes[next_node_id].not_specialize_itteration!=specialize_itteration)
+                    {
+                        if(nodes[next_node_id].specialize_itteration != specialize_itteration)
+                        {
+                            nodes[next_node_id].specialize_itteration = specialize_itteration;
+                            nodes[next_node_id].specialize_count = 1;
+                        }
+                        else
+                        {
+                            nodes[next_node_id].specialize_count++;
+                            if(nodes[next_node_id].specialize_count == nodes[node_id].edges_in.size() &&
+                               nodes[node_id].edges_in.size() == nodes[next_node_id].edges_in.size())
+                            {
+                                duplicates.pb(next_node_id);
+                            }
+                            else if(nodes[next_node_id].specialize_count == nodes[next_node_id].edges_in.size())
+                            {
+                                to_specialize_ids.pb(next_node_id);
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if(duplicates.size()>=1)
+        {
+            assert(0);
+            map<int, vector<int> > add_edge_ids;
+            for(int i=0;i<duplicates.size();i++)
+            {
+                for(int j=0;j<net[duplicates[i]].size();j++)
+                {
+                    int to = edges[net[duplicates[i]][j]].to;
+                    add_edge_ids[to].pb(net[duplicates[i]][j]);
+                }
+                assert(0);
+                nodes[duplicates[i]].edges_in.clear();
+            }
+            for(int i=0;i<net[node_id].size();i++)
+            {
+                int to = edges[net[node_id][i]].to;
+                if(add_edge_ids.find(to)!=add_edge_ids.end())
+                {
+                    vector<int> edge_ids = add_edge_ids[to];
+                    assert(edge_ids.size()>0);
+                    add_edge_ids[to].clear();
+                    for(int j = 0;j<edge_ids.size();j++)
+                    {
+                        remove_edge(edge_ids[j]);
+                    }
+                }
+            }
+            for(map<int, vector<int> >::iterator it = add_edge_ids.begin();it!=add_edge_ids.end();it++)
+            {
+                vector<int> edge_ids = (*it).s;
+                for(int i=0;i<edge_ids.size();i++)
+                {
+                    int to = edges[edge_ids[i]].to;
+                    int edge_id = edge_ids[i];
+                    assert(node_id!=to);
+                    if(node_id!=to)
+                    {
+                        updateEdge(edge_id, node_id, to);
+                    }
+                }
+
+            }
+            for(int i=0;i<duplicates.size();i++)
+            {
+                assert(net[duplicates[i]].size()==0);
+                assert(nodes[duplicates[i]].edges_in.size()==0);
+            }
+        }
+
+        if(to_specialize_ids.size()==0)
+        {
+            return ;
+        }
+        vector<int> from_node_ids;
+        vector<int> edge_in_ids;
+        vector<int> covered;
+        vector<vector<int> > covered_edge_ids;
+        for(int i=0;i<nodes[node_id].edges_in.size();i++)
+        {
+            from_node_ids.pb(edges[nodes[node_id].edges_in[i]].from);
+            edge_in_ids.pb(nodes[node_id].edges_in[i]);
+            covered.pb(0);
+            vector<int> v_empty;
+            covered_edge_ids.pb(v_empty);
+        }
+
+        vector<int> new_node_from_ids;
+        vector<int> covered_k;
+
+        for(int i=0;i<to_specialize_ids.size();i++)
+        {
+            for(int j=0;j<nodes[to_specialize_ids[i]].edges_in.size();j++)
+            {
+                for(int k=0;k<from_node_ids.size();k++)
+                {
+                    if(from_node_ids[k]==edges[nodes[to_specialize_ids[i]].edges_in[j]].from)
+                    {
+                        covered[k]++;
+                        covered_edge_ids[k].pb(nodes[to_specialize_ids[i]].edges_in[j]);
+                        if(covered[k]==to_specialize_ids.size())
+                        {
+                            new_node_from_ids.pb(edges[nodes[to_specialize_ids[i]].edges_in[j]].from);
+                            covered_k.pb(k);
+                        }
+                    }
+                }
+            }
+        }
+
+
+        if(new_node_from_ids.size()>=2&&to_specialize_ids.size()>=2)
+        {
+            int spacialized_node_id = -1;
+            int count_enters = 0;
+            for(int i=0;i<to_specialize_ids.size();i++)
+            {
+                if(nodes[to_specialize_ids[i]].edges_in.size()==new_node_from_ids.size())
+                {
+                    assert(spacialized_node_id == -1);
+                    spacialized_node_id = to_specialize_ids[i];
+                    count_enters++;
+                }
+            }
+            if(spacialized_node_id == -1)
+            {
+                spacialized_node_id = initNode(nodes[node_id].compute.same_operation(), origin("specialize", to_specialize_ids));
+                addEdges_in(new_node_from_ids, spacialized_node_id);
+                addEdges_out(spacialized_node_id, to_specialize_ids);
+                for(int i=0;i<covered_k.size();i++)
+                {
+                    for(int j=0;j<covered_edge_ids[covered_k[i]].size();j++)
+                    {
+                        int remove_edge_id = covered_edge_ids[covered_k[i]][j];
+                        remove_edge(remove_edge_id);
+                    }
+                }
+            }
+            else
+            {
+                to_specialize_ids.erase(std::remove(to_specialize_ids.begin(), to_specialize_ids.end(), spacialized_node_id), to_specialize_ids.end());
+                assert(nodes[node_id].compute.is_same_operation(nodes[spacialized_node_id].compute));
+                nodes[spacialized_node_id].lineage = origin("specialize", to_specialize_ids);
+                addEdges_out(spacialized_node_id, to_specialize_ids);
+                for(int i=0;i<covered_k.size();i++)
+                {
+                    for(int j=0;j<covered_edge_ids[covered_k[i]].size();j++)
+                    {
+                        int remove_edge_id = covered_edge_ids[covered_k[i]][j];
+                        if(edges[remove_edge_id].to!=spacialized_node_id)
+                        {
+                            remove_edge(remove_edge_id);
+                        }
+                    }
+                }
+            }
+        }
+
+        addEdges_in(to_specialize_ids, node_id);
+        for(int i=0;i<covered.size();i++)
+        {
+            if(covered[i]>=1)
+            {
+                remove_edge(edge_in_ids[i]);
+            }
+        }
+    }
+
+    void debug()
+    {
+        while(1)
+        {
+            int test_node_id;
+            cout << "enter node id to test" << endl;
+            cin >> test_node_id;
+            cleanCode(fullcode(test_node_id));
+            cout << "inputs::";
+            for(int i=0;i<nodes[test_node_id].edges_in.size();i++)
+            {
+                cout << edges[nodes[test_node_id].edges_in[i]].from <<" ";
+            }
+            cout << endl;
+            cout << "outputs::";
+            for(int i=0;i<net[test_node_id].size();i++)
+            {
+                cout << edges[net[test_node_id][i]].to <<" ";
+            }
+            cout << endl;
+        }
+    }
+
+    void induce_specialize()
+    {
+        for(int i=n-1;i>=0;i--)
+        {
+            if(nodes[i].edges_in.size()>0)
+                specialize(i);
+        }
+    }
+    void induce_not()
+    {
+        for(int i=0;i<n;i++)
+        {
+            if(nodes[i].edges_in.size()>0)
+                add_not(i);
+        }
+    }
+    void induce_generalize()
+    {
+        for(int i=0;i<n;i++)
+        {
+            if(nodes[i].edges_in.size()>0)
+                generalize(i);
+        }
+    }
+    void print_state_is_action_of_state(string action, int node_id)
+    {
+        cout << action <<endl <<endl;;
+        nodes[node_id].compute.is_code_generated = false;
+        nodes[node_id].lineage.is_code_generated = false;
+        cout << "n = " << n <<endl;
+        cleanCode(fullcode(node_id));
+    }
+    void build_lookup_table(Data *entity)
+    {
+
+        printNodes = true;
+        printlineage = true;
+        init(entity->numInputs, entity->numOutputs);
+        for(int i=0;i<entity->sampleSize;i++)
+        {
+            add_hardcode_node(entity->in[i], entity->out[i]);
+        }
+        int node_id = outputNodes[1];
+        printNodes = true;
+        for(int i=0;i<n;i++)
+        {
+            nodes[i].compute.is_code_generated = false;
+            nodes[i].lineage.is_code_generated = false;
+        }
+        //printNet();
+        for(int i=0;i<outputNodes.size();i++)
+        {
+            cleanCode(fullcode(outputNodes[i]));
+        }
+        induce_not();
+        print_state_is_action_of_state("induce_not", node_id);
+        induce_generalize();
+        print_state_is_action_of_state("induce_generalize", node_id);
+        induce_not();
+        print_state_is_action_of_state("induce_not", node_id);
+        induce_generalize();
+        print_state_is_action_of_state("induce_generalize", node_id);
+        induce_not();
+        print_state_is_action_of_state("induce_not", node_id);
+        induce_specialize();
+        print_state_is_action_of_state("induce_specialize", node_id);
+        induce_generalize();
+        print_state_is_action_of_state("induce_generalize", node_id);
+
+        //induce_generalize();
+        //induce_generalize();
+        //induce_generalize();
+        //induce_specialize();
+        //induce_generalize();
+        //induce_specialize();
+        printNodes = true;
+        for(int i=0;i<n;i++)
+        {
+            nodes[i].compute.is_code_generated = false;
+            nodes[i].lineage.is_code_generated = false;
+        }
+        //printNet();
+        for(int i=0;i<outputNodes.size();i++)
+        {
+            cleanCode(fullcode(outputNodes[i]));
+        }
+    }
+    void cleanCode(string code)
+    {
+        int indent_size = 4;
+        string indent = "";
+        int prev_new_line = false;
+        for(int i=0;i<code.size();i++)
+        {
+            if(code[i]=='(')
+            {
+                cout << code[i];
+                cout << endl;
+                for(int j=0;j<indent_size;j++)
+                    indent+=" ";
+                cout << indent;
+                prev_new_line = false;
+            }
+            else if(code[i] == ')')
+            {
+                indent.erase(indent.size()-indent_size, indent_size);
+                if(!prev_new_line)
+                {
+                    cout << endl<< indent;
+                }
+                else
+                {
+                    if(code[i-1]==')')
+                    {
+                        cout << indent;
+                    }
+                }
+                cout << code[i];
+                if(!prev_new_line&&i<code.size()-1&&code[i+1]!=',')
+                {
+                    cout << endl;
+                    prev_new_line = true;
+                }
+                else
+                {
+                    prev_new_line = false;
+                }
+            }
+            else if(code[i]==',')
+            {
+                cout << code[i] << endl;
+                cout << indent;
+                prev_new_line = true;
+            }
+            else
+            {
+                cout << code[i];
+                prev_new_line = false;
+            }
+        }
+        cout << endl;
+    }
+    int printNodes;
+    void printNet()
+    {
+        cout << n<<endl;
+        if(printNodes)
+        {
+            int count_inLinbo = 0;
+            for(int i=0;i<n;i++)
+            {
+                if((net[i].size()==0&&!nodes[i].lineage.is_output_node)||(nodes[i].edges_in.size()==0&&!nodes[i].lineage.is_input_node))
+                    count_inLinbo ++;
+
+                if(true||nodes[i].edges_in.size()>0||nodes[i].lineage.is_input_node)
+                {
+                    pair<string, string> tmp = generatecode(i, true);
+                    string output = tmp.f;
+                    if(tmp.f!=""&&tmp.s!="") output+="<=";
+                    output+=tmp.s;
+                    cout << i <<" :: "<< output << endl;
+                    cout << "inputs: ";
+                    for(int j=0;j<nodes[i].edges_in.size();j++)
+                    {
+                        cout << edges[nodes[i].edges_in[j]].from <<" ";
+                    }
+                    cout << endl <<"output: ";
+                    for(int j=0;j<net[i].size();j++)
+                    {
+                        cout << edges[net[i][j]].to <<" ";
+                    }
+                    cout << endl;
+                }
+                else
+                {
+                    cout << i <<" in tbd"<<endl;
+                }
+            }
+            cout << "in Linbo: " << count_inLinbo <<endl;
+        }
+        cout << endl;
+    }
+    double getOutput(int node_id, int iteration)
+    {
+        if(iteration == nodes[node_id].memmo_iteration)
+        {
+            return nodes[node_id].output;
+        }
+        int count_in = 0;
+        for(int i=0;i<nodes[node_id].edges_in.size();i++)
+        {
+            assert(edges[nodes[node_id].edges_in[i]].to == node_id);
+            int from = edges[nodes[node_id].edges_in[i]].from;
+            if(nodes[node_id].compute.is_equals_node)
+            {
+                count_in+=(getOutput(from, iteration)==nodes[node_id].compute.judge);
+            }
+            else if(nodes[node_id].compute.is_different_node)
+            {
+                count_in+=(getOutput(from, iteration)!=nodes[node_id].compute.judge);
+            }
+            else
+            {
+                count_in+=getOutput(from, iteration);
+            }
+        }
+        if(nodes[node_id].compute.is_equals_node || nodes[node_id].compute.is_different_node)
+        {
+            nodes[node_id].output = (count_in == (nodes[node_id].edges_in.size()));
+        }
+        else
+        {
+            assert(nodes[node_id].compute.is_and_node||nodes[node_id].compute.is_or_node);
+            nodes[node_id].output = (count_in >= nodes[node_id].compute.judge);
+        }
+        return nodes[node_id].output;
+    }
+
+    vector<bit_signature> feedForward(vector<bit_signature> input)
+    {
+        iteration++;
+        assert(input.size()==inputNodes.size());
+        for(int i=0;i<input.size();i++)
+        {
+            nodes[inputNodes[i]].setOutput(input[i], iteration);
+        }
+        vector<bit_signature> ret;
+        for(int i=0;i<outputNodes.size();i++)
+        {
+            ret.pb(getOutput(outputNodes[i], iteration));
+        }
+        return ret;
+    }
+    void test(Data *latice)
+    {
+        int count_wrong = 0;
+        for(int i=0;i<latice->sampleSize;i++)
+        {
+            vector<bit_signature> predict = feedForward(latice->in[i]);
+            bool correct = latice->checkPrediction(i, predict);
+            if(!correct)
+            {
+                latice->printTest(i, predict);
+            }
+            count_wrong+=!correct;
+        }
+        if(count_wrong == 0)
+        {
+            cout << "proved"<<endl;
+        }
+        else
+        {
+            cout << "wrong: " << count_wrong << endl;
+        }
+    }
+
+
+};
+
+class LogicNet
+{
+public:
+    ///omg 11th June 2017
+};
+
+void work_meta_net()
+{
+    //string type = "input_is_output";
+    string type = "longestSubstring_ai_is_1";
+    //string type = "a_i_is_a_i_plus_one_for_all";
+    //string type = "longestSubstring_dai_di_is_0";
+
+    int inputSize = 4;
+    number_of_dimesions = inputSize;
+    int outputSize;
+    Data scripts_neuron_description;
+    scripts_neuron_description.generateData(inputSize, outputSize, type);
+    scripts_neuron_description.make_binary();
+    //scripts_neuron_description.seeData();
+
+    metaNet brain = metaNet();
+    brain.build_lookup_table(&scripts_neuron_description);
+    //brain.printNet();
+
+    brain.test(&scripts_neuron_description);
+}
+
+/*void splitEdges_out(int node_id)
+ {
+ if(net[node_id].size()==0)
+ {
+ return ;
+ }
+ vector<pair<int, int> > edges_out; //pair<int edge_w, edge_id>
+ for(int i=0;i<net[node_id].size();i++)
+ {
+ int edge_id = net[node_id][i];
+ edges_out.pb(mp(edges[edge_id].w, edge_id));
+ }
+ sort_v(edges_out);
+ vector<bit_signature> new_edge_w;
+ vector<vector<int> > split_edges;
+ vector<int> currentClass;
+
+ new_edge_w.pb(edges_out[0].f);
+ currentClass.pb(edges_out[0].s);
+ for(int i=1;i<edges_out.size();i++)
+ {
+ if(edges_out[i].f!=edges_out[i-1].f)
+ {
+ split_edges.pb(currentClass);
+ currentClass.clear();
+ new_edge_w.pb(edges_out[i].f);
+ currentClass.pb(edges_out[i].s);
+ }
+ else
+ {
+ currentClass.pb(edges_out[i].s);
+ }
+ }
+ split_edges.pb(currentClass);
+
+ if(split_edges.size()==edges_out.size() || split_edges.size() == 1)
+ {
+ return ;
+ }
+ vector<int> split_nodes_ids;
+ for(int i=0;i<split_edges.size();i++)
+ {
+ int newNode_id = initNode(computation("=="), origin(mp("if", i), node_id));
+ split_nodes_ids.pb(newNode_id);
+ for(int j=0;j<split_edges[i].size();j++)
+ {
+ int edge_id = split_edges[i][j];
+ updateEdge(edge_id, newNode_id, edges[edge_id].to, 1);
+ }
+ }
+ bool add_not = (new_edge_w.size()==2&&new_edge_w[0]==-new_edge_w[1]);
+ if(add_not)
+ {
+ nodes[split_nodes_ids[0]].not_id = split_nodes_ids[1];
+ nodes[split_nodes_ids[1]].not_id = split_nodes_ids[0];
+ }
+ //debug
+ //net[node_id].clear();
+ addEdges_out(node_id, split_nodes_ids, new_edge_w);
+ }
+ */
+
+/*
+ vector<net> teachers;
+
+ pair<int, int> next_Data_to_split = make_pair(-1, -1);
+ assert(teachers.size() == 0);
+
+ for(int i = 0;i<first_split.size();i++)
+ {
+ cout <<endl << "NEW TEACHER" <<endl << endl;
+ net special_teacher = net(inputSize, hiddenLayers, outputSize);
+ special_teacher.train(&first_split[i], "queue train");
+
+ special_teacher.test(&first_split[i], "print result");
+
+ special_teacher.topologicalSortOfSamples(&first_split[i]);
+
+ assert(special_teacher.important_neurons.size() >= 1);
+
+ next_Data_to_split = max(next_Data_to_split, make_pair(special_teacher.important_neurons[0].f, i));
+
+ teachers.push_back(special_teacher);
+ }
+
+ int teacher_id = next_Data_to_split.second;
+
+ vector<pair<int, int> > new_split_node;
+ for(int i = 0;i<teachers[teacher_id].important_neurons[0].s.size();i++)
+ {
+ int the_bit = teachers[teacher_id].important_neurons[0].s[i];
+ if(the_bit!=0)
+ {
+ new_split_node.push_back(make_pair(i, the_bit));
+ }
+ }
+
+ vector<Data> second_split = first_split[teacher_id].split(new_split_node);
+
+ for(int i = 0;i<second_split.size();i++)
+ {
+ cout <<endl << "NEW TEACHER" <<endl << endl;
+ net special_teacher = net(inputSize, hiddenLayers, outputSize);
+ special_teacher.train(&second_split[i], "queue train");
+
+ special_teacher.test(&second_split[i], "print result");
+
+ special_teacher.topologicalSortOfSamples(&second_split[i]);
+
+ /*assert(special_teacher.important_neurons.size() >= 1);
+
+ next_Data_to_split = max(next_Data_to_split, make_pair(special_teacher.important_neurons[0].f, i));
+
+ teachers.push_back(special_teacher);* /
+ }
+
+
+
+
+ if(printTopologicalOrder)
+ {
+
+ Data newScripts;
+ newScripts.generateData(inputSize, outputSize, type, hintOrder);
+
+ net brain = net(inputSize, hiddenLayers, outputSize);
+ brain.train(&newScripts, "queue train");
+
+ hintOrder = brain.topologicalSortOfSamples(&newScripts);
+
+ brain.test(&testData, "print result");
+ }*/
+
+/*void train(Data *latice, double rate, string type)
+ {
+ delta_knowledge_graph.clear();
+ assert(delta_knowledge_graph.size() == 0);
+ count_backprop = 0;
+ count_feedforward = 0;
+
+ if(type == "stupid train")
+ {
+ stupidTrain(latice);
+ }
+ else if(type == "priority train")
+ {
+ softPriorityTrain(latice, rate);
+ }
+ else if(type == "hard priority train")
+ {
+ hardPriorityTrain(latice, rate);
+ }
+ else if(type == "queue train")
+ {
+ queueTrain(latice, rate);
+ }
+ else if(type == "double priority train")
+ {
+ doublePriorityTrain(latice, rate);
+ }
+ else if(type == "stack train")
+ {
+ stackTrain(latice);
+ }
+ else if(type == "rek train")
+ {
+ rekTrain(latice, latice->sampleSize-1);
+ }
+ else if(type == "full batch train")
+ {
+ fullBatchTrain(latice, rate);
+ }
+ else
+ {
+ cout << "none type"<<endl;
+ assert(0);
+ }
+ if(printCycle)
+ {
+ cout << "backprop: " << count_backprop <<endl;
+ cout << "feedforward: "<< count_feedforward << endl;
+ }
+ }
+ */
+/*void doublePriorityTrain(Data *latice, double rate)
+ {
+
+ int trainSetSize = latice->sampleSize;
+
+ pair<double, int> next_id = mp(-1, -1);
+ pair<double, int> second_id = mp(500, -1);
+
+ int iteration_no = 0;
+
+ while(!training_completed(latice))
+ {
+ next_id = get_maximal_error_example(latice, rate, 1).elements[0];
+
+ second_id = mp(500, -1);
+ //goal: select pair of training examples that minimize ( maxaimal over all training examples (error per training examples))
+
+ for(int i = 0;i<trainSetSize;i++)
+ {
+ net one_step_towards_i = net(copy());
+ one_step_towards_i.backwardPropagate
+ (latice->out[next_id.s], one_step_towards_i.forwardPropagate(latice->in[next_id.s], true), rate, false);
+ one_step_towards_i.backwardPropagate
+ (latice->out[i], one_step_towards_i.forwardPropagate(latice->in[i], true), rate, false);
+ one_step_towards_i.batchApplyDeltaWeights();
+
+ double max_error = one_step_towards_i.get_maximal_error_example(latice, rate, 1).f;
+
+ second_id = min(second_id, mp(max_error, i));
+ }
+
+
+
+ / *next_id = mp(500, -1);
+ //next_id = mp(-1, -1);
+ double second_best = -1;
+ vector<vector<vector<bit_signature> > > error_delta_per_i_per_j =
+ vector<vector<vector<bit_signature> > >(trainSetSize, vector<vector<bit_signature> >(trainSetSize, vector<bit_signature>(latice->numOutputs, 0)));
+ for(int i = 0;i<trainSetSize;i++)
+ {
+ vector<vector<bit_signature> > prev_error_per_j;
+ net one_step_towards_i = net(copy());
+
+ for(int j = 0;j<trainSetSize;j++)
+ {
+ prev_error_per_j.push_back(one_step_towards_i.forwardPropagate(latice->in[j], false));
+ }
+
+ vector<bit_signature> predict = one_step_towards_i.forwardPropagate(latice->in[i], true);
+ one_step_towards_i.backwardPropagate(latice->out[i], predict, rate, true);
+
+ double sum_of_sum_of_errors = 0;
+ double sum_of_sum_of_unlearned = 0;
+ vector<bit_signature> all_deltas;
+ for(int j = 0;j<trainSetSize;j++)
+ {
+ vector<bit_signature> new_error_of_j = one_step_towards_i.forwardPropagate(latice->in[i], false);
+ assert(new_error_of_j.size() == prev_error_per_j[j].size());
+ vector<bit_signature> desired = latice->out[j];
+
+ for(int k = 0;k<new_error_of_j.size();k++)
+ {
+ double prev_error = desired[k] - prev_error_per_j[j][k];
+ double new_error = desired[k] - new_error_of_j[k];
+
+ double delta = (prev_error-new_error);
+ all_deltas.push_back(delta);
+ error_delta_per_i_per_j[i][j][k] = delta;
+
+ sum_of_sum_of_errors+=new_error*new_error;
+ }
+ //double error_sum = sum_vector(get_error(latice->out[j], one_step_towards_i.forwardPropagate(latice->in[j], false)));
+ //sum_of_sum_of_errors+=error_sum;
+ }
+ /*sort_v(all_deltas);
+ for(int j = 0;j<all_deltas.size();j++)
+ {
+ cout << fixed << setprecision(3) << all_deltas[j] << endl;;
+ }* /
+ //cout << i <<"\t" << sum_of_sum_of_errors <<endl;
+ if(sum_of_sum_of_errors < next_id.f)
+ {
+ second_best = next_id.f;
+ }
+ next_id = min(next_id, mp(sum_of_sum_of_errors, i));
+ //next_id = max(next_id, mp(sum_of_sum_of_errors, i));
+ }
+
+ /*vector<pair<double, pair<int, int> > > all_pairs;
+ pair<double, pair<int, int> > best_pair = mp(-1, mp(-1, -1));
+ for(int i = 0;i<trainSetSize;i++)
+ {
+ for(int j = i+1;j<trainSetSize;j++)
+ {
+ double compatible_score = 0;
+ for(int k = 0;k<trainSetSize; k++)
+ {
+ for(int l = 0;l<latice->numOutputs; l++)
+ {
+ double composed_error = 0.5*(error_delta_per_i_per_j[i][k][l]+error_delta_per_i_per_j[j][k][l]);
+ compatible_score += composed_error;
+ }
+ }
+ all_pairs.push_back(mp(compatible_score, mp(i, j)));
+ best_pair = max(best_pair, mp(compatible_score, mp(i, j)));
+ }
+ }* /
+
+ / *sort_v(all_pairs);
+ for(int i = 0;i<all_pairs.size();i++)
+ {
+ cout <<fixed << setprecision(4) << all_pairs[i].f <<"\t" << printVector(latice->in[all_pairs[i].s.f]) <<"\t" << printVector(latice->in[all_pairs[i].s.s]) <<endl;
+ }* /
+
+ //break;
+ if(next_id.f < second_id.f)
+ {
+ backwardPropagate
+ (latice->out[next_id.s], forwardPropagate(latice->in[next_id.s], true), rate, true);
+ }
+ else
+ {
+
+ backwardPropagate
+ (latice->out[next_id.s], forwardPropagate(latice->in[next_id.s], true), rate, false);
+
+ backwardPropagate
+ (latice->out[second_id.s], forwardPropagate(latice->in[second_id.s], true), rate, false);
+
+ batchApplyDeltaWeights();
+ }
+
+ if(printCleanItteration)
+ {
+ cout << iteration_no << "\t" << next_id.f <<endl;
+ }
+
+ if(printItteration)
+ {
+ cout << iteration_no << "\t" << next_id.s <<endl;
+
+ pair<vector<pair<int, vector<bit_signature> > >, int> currentKnowledge = test(latice);
+ int correct = 0;
+ for(int i=0;i<currentKnowledge.f.size();i++)
+ {
+ correct+=(currentKnowledge.f[i].f==0);
+ cout << (currentKnowledge.f[i].f==0);
+ }
+ assert(correct == trainSetSize-currentKnowledge.s);
+
+ if(next_id.f < second_id.f)
+ {
+ cout << fixed << setprecision(4) << (next_id.f > second_id.f) << " == (" << next_id.f  << " < " <<  second_id.f <<") i.e. single " << next_id.s << endl;
+ }
+ else
+ {
+ cout << fixed << setprecision(4) << (next_id.f > second_id.f) << " == (" << next_id.f  << " < " <<  second_id.f <<") i.e. double " << next_id.s <<" "<< second_id.s << endl;
+ }
+
+ }
+ iteration_no++;
+ }
+
+ }*/
+
+/*if(new_left == NULL && new_right == NULL)
+ {
+ if(printNewChildren)
+ {
+ cout << "new chilldren :: :: " <<endl;
+ cout << "    left ::" <<endl;
+ int tmp = try_left->print_gate(2);
+ cout << "    right ::" <<endl;
+ tmp+=try_right->print_gate(2);
+ assert(tmp == grown_children);
+ }
+ new_left = try_left;
+ new_right = try_right;
+ improved++;
+ }
+ else
+ {
+ if(try_left->new_size + try_right->new_size < new_left->new_size + new_right->new_size)
+ {
+
+ if(printNewChildren)
+ {
+ cout << "new chilldren :: :: " <<endl;
+ cout << "    left ::" <<endl;
+ int tmp = try_left->print_gate(2);
+ cout << "    right ::" <<endl;
+ tmp+=try_right->print_gate(2);
+ assert(tmp == grown_children);
+
+ cout << "old chilldren :: :: " <<endl;
+ cout << "    left ::" <<endl;
+ new_left->print_gate(2);
+ cout << "    right ::" <<endl;
+ new_right->print_gate(2);
+ }
+
+ new_left = try_left;
+ new_right = try_right;
+ improved ++;
+ }
+ else
+ {
+ fail_to_improve++;
+ }
+ }*/
+/*double delta = (abs(the_batch.input_average[dimension_id] - latice->in[i][dimension_id])*(prev_error_of_samples[i].error-updated_element.error));//*(prev_error_of_samples[i].error-updated_element.error));
+
+
+ if((prev_error_of_samples[i].error-updated_element.error) < 0)
+ {
+ bit_weighted_negative_dimension[dimension_id]+=the_batch.input_average[dimension_id]*(-delta);
+
+ negative_delta_ins_sum[dimension_id]+=abs(the_batch.input_average[dimension_id] - latice->in[i][dimension_id]);
+ negative_dimensions[dimension_id]+=delta;
+ care_dimension_per_example[i][dimension_id]+=delta;
+ care_delta_ins_sum[i][dimension_id]+=abs(the_batch.input_average[dimension_id] - latice->in[i][dimension_id]);
+ }
+ else
+ {
+ positive_delta_ins_sum[dimension_id]+=abs(the_batch.input_average[dimension_id] - latice->in[i][dimension_id]);
+ positive_dimensions[dimension_id]+=delta;
+ dont_care_dimension_per_example[i][dimension_id]+=delta;
+ dont_care_delta_ins_sum[i][dimension_id]+=abs(the_batch.input_average[dimension_id] - latice->in[i][dimension_id]);
+ }
+
+ max_delta[i][dimension_id] = max((double)max_delta[i][dimension_id], -(double)care_dimension_per_example[i][dimension_id]-dont_care_dimension_per_example[i][dimension_id]);*/
+/*vector<bit_signature> sum_of_error(latice->numOutputs, 0);
+ for(int i = 0; i<latice->size();i++)
+ {
+ vector<bit_signature> error = get_error(latice->out[i], home->forwardPropagate(latice->in[i], false));
+ assert(error.size() == sum_of_error.size());
+ for(int j = 0;j<error.size();j++)
+ {
+ sum_of_error[j]+=error[j];
+ }
+ }
+ for(int j = 0;j<sum_of_error.size();j++)
+ {
+ sum_of_error[j]/=latice->size();
+ }*/
+
+/*
+ void print_cares()
+ {
+ //sums
+ vector<pair<double, int> > sorted_by_neg_val;
+ vector<pair<double, int> > sorted_by_pos_val;
+ vector<pair<double, int> > sorted_by_sum_abs_val;
+ pair<double, int> max_abs_val = mp(0, -1);
+ pair<double, int> max_negative_val= mp(0, -1);
+ pair<double, int> max_positive_val= mp(0, -1);
+ pair<double, int> max_sum_val= mp(0, -1);
+
+ for(int i = 0;i<care_dimension_per_example.size();i++)
+ {
+ cout << latice->printVector(latice->in[i])<<endl;
+ vector<int> order = sort_negative_dimensions(i);
+ string out(latice->numInputs, ' ');
+ for(int j = 0;j<order.size();j++)
+ {
+ out[order[j]] = '0'+j;
+ }
+ cout << out << endl;
+ cout << endl;
+ }
+
+ for(int i = 0;i<max_delta.size();i++)
+ {
+ cout << "in  : " << latice->printVector(latice->in[i])<<endl;
+ cout << "max : ";
+ for(int j = 0;j<max_delta[i].size();j++)
+ {
+ if(max_delta[i][j] > 0)
+ //if(((-care_dimension_per_example[i][j])>dont_care_dimension_per_example[i][j]))
+ {
+ cout << 1;
+ }
+ else
+ {
+ cout << 0;
+ }
+ }
+ /*cout << endl;
+ cout << "last: ";
+ for(int j = 0;j<max_delta[i].size();j++)
+ {
+ //if(max_delta[i][j] > 0)
+ if(((-care_dimension_per_example[i][j])>dont_care_dimension_per_example[i][j]))
+ {
+ cout << 1;
+ }
+ else
+ {
+ cout << 0;
+ }
+ }* /
+ cout << endl;
+ cout << endl;
+ }
+
+ for(int i = 0;i<dont_care_dimension_per_example.size();i++)
+ {
+ cout << latice->printVector(latice->in[i])<<endl;
+ double abs_val = 0;
+ double sum_val = 0;
+ for(int j = 0;j<dont_care_dimension_per_example[i].size();j++)
+ {
+ abs_val += -care_dimension_per_example[i][j]+dont_care_dimension_per_example[i][j];
+ if(care_dimension_per_example[i][j]+dont_care_dimension_per_example[i][j]<0)
+ {
+ sum_val += abs(care_dimension_per_example[i][j]+dont_care_dimension_per_example[i][j]);
+ }
+ cout << ((-care_dimension_per_example[i][j])>dont_care_dimension_per_example[i][j]);
+ }
+ cout << endl;
+ double pos_val = 0;
+ for(int j = 0;j<dont_care_dimension_per_example[i].size();j++)
+ {
+ pos_val += dont_care_dimension_per_example[i][j];
+ cout << dont_care_dimension_per_example[i][j] <<" ";
+ }
+ cout << endl;
+ double neg_val = 0;
+ for(int j = 0;j<dont_care_dimension_per_example[i].size();j++)
+ {
+ neg_val-=care_dimension_per_example[i][j];
+ cout << care_dimension_per_example[i][j] <<" ";
+ }
+ cout << endl;
+ max_abs_val = max(max_abs_val, mp(abs_val, i));
+ max_negative_val = max(max_negative_val, mp(neg_val, i));
+ max_positive_val = max(max_positive_val, mp(pos_val, i));
+ max_sum_val = max(max_sum_val, mp(sum_val, i));
+ sorted_by_neg_val.push_back(mp(neg_val, i));
+ sorted_by_pos_val.push_back(mp(pos_val, i));
+
+ sorted_by_sum_abs_val.push_back(mp(sum_val, i));
+ }
+ //cout << max_abs_val.f <<" "<< latice->printVector(latice->in[max_abs_val.s]) <<endl;
+ //cout << max_negative_val.f <<" "<< latice->printVector(latice->in[max_negative_val.s]) <<endl;
+ //cout << max_positive_val.f <<" "<< latice->printVector(latice->in[max_positive_val.s]) <<endl;
+ //cout << max_sum_val.f <<" "<< latice->printVector(latice->in[max_sum_val.s]) <<endl;
+ sort_v(sorted_by_neg_val);
+ cout << "sorted by negative: " << endl;
+ for(int i = 0;i<sorted_by_neg_val.size();i++)
+ {
+ cout << sorted_by_neg_val[i].f <<" " << latice->printVector(latice->in[sorted_by_neg_val[i].s]) <<endl;
+ }
+
+
+ sort_v(sorted_by_pos_val);
+ cout << "sorted by positive: " << endl;
+ for(int i = 0;i<sorted_by_pos_val.size();i++)
+ {
+ cout << sorted_by_pos_val[i].f <<" " << latice->printVector(latice->in[sorted_by_pos_val[i].s]) <<endl;
+ }
+
+ sort_v(sorted_by_sum_abs_val);
+ cout << "sorted by delta negative: " << endl;
+ for(int i = 0;i<sorted_by_neg_val.size();i++)
+ {
+ cout << sorted_by_sum_abs_val[i].f <<" " << latice->printVector(latice->in[sorted_by_sum_abs_val[i].s]) <<endl;
+ }
+ * /
+ }*/
+/*assert(negative_dimensions.size() != 0);
+ //pair<double, int> ret = mp(1000000000, -1);
+ //bool no = true;
+ for(int i = 0;i<negative_dimensions.size();i++)
+ {
+ ret = min(ret, mp((double)negative_dimensions[i], i));
+ if(negative_dimensions[i] != 0)
+ {
+ no = false;
+ }
+ }
+ if(ret.f >= 0)
+ {
+ //cout << ret.f <<" -1" <<endl;
+ return -1;
+ }
+ else
+ {
+ //cout << ret.f << " "<< ret.s <<endl;
+ return ret.s;
+ }*/
+
+/*
+ int old_build_tree(net::parameters param, int (net::*training_f)(Data*, net::parameters))
+ {
+ int inputSize = the_Data.numInputs;
+ int outputSize = the_Data.numOutputs;
+ int max_inter = inputSize;
+ int hiddenLayers[10] =
+ {
+ max_inter,
+ -1
+ };
+
+ the_teacher = net(inputSize, hiddenLayers, outputSize);
+
+ //param.set_iteration_count(the_Data.size());
+
+ bool expanded = false;
+
+ original_size = 0;
+ int ret = 0;
+ int size_of_children = 0;
+ int grown_children = -1;
+ while(!the_teacher.test(&the_Data, "no action") && !expanded)
+ {
+
+ the_teacher.train(&the_Data, param, training_f);
+
+
+
+ int the_bit = the_teacher.the_model.get_worst_dimension();
+
+ //cout << "the bit " << the_bit << endl;
+
+ if(the_bit != -1 || !the_Data.is_constant() /*|| !the_teacher.test(&the_Data, "no action")* /)
+{
+    assert(ret == 0);
+    expanded = true;
+
+    if(the_bit == -1)
+    {
+        the_bit = the_Data.get_first_active_input_bit();
+    }
+
+    gate.push_back(make_pair(the_bit, 1));
+
+    left = new archaic_neural_decision_tree();
+    right = new archaic_neural_decision_tree();
+
+    the_Data.split(gate, left->the_Data, right->the_Data);
+    bool enter = true;
+    if(left->the_Data.size() >= 2)
+    {
+        if(print_the_imporant_bit)cout << "l"<< the_bit <<endl;
+            size_of_children+=left->old_build_tree(param, training_f);
+            original_size+=left->original_size;
+            }
+            else
+        {
+            enter = false;
+            size_of_children+=1;
+            original_size++;
+        }
+            if(right->the_Data.size() >= 2)
+        {
+            if(print_the_imporant_bit)cout << "r" << the_bit <<endl;
+            size_of_children+=right->old_build_tree(param, training_f);
+            original_size+=right->original_size;
+        }
+            else
+        {
+            enter = false;
+            size_of_children+=1;
+            original_size++;
+        }
+
+            if(enter && the_Data.get_active_bits().size() <= 3)
+        {
+            Data data_with_all_kernels;
+            the_Data.add_gates_between_active_bits(the_Data.get_active_bits(), data_with_all_kernels);
+
+            net second_teacher = net(data_with_all_kernels.numInputs, data_with_all_kernels.numOutputs);
+            //cout << "init training" <<endl;
+            second_teacher.train(&data_with_all_kernels, param, &net::softPriorityTrain);
+            //cout << "end training" <<endl;
+
+            int the_local_bit = second_teacher.the_model.get_worst_dimension();
+
+            if(the_local_bit >= the_Data.numInputs)
+            {
+                Data data_with_single_kernel;
+                data_with_all_kernels.add_single_kernel_to_base_and_discard_rest(the_local_bit, data_with_single_kernel);
+
+                the_local_bit = the_Data.numInputs;
+
+                Data left_kernel, right_kernel;
+                vector<unit_gate_type> gate_line;
+                gate_line.push_back(mp(the_local_bit, 1));
+                data_with_single_kernel.split(gate_line, left_kernel, right_kernel);
+
+                new_left = new archaic_neural_decision_tree();
+                new_right = new archaic_neural_decision_tree();
+
+                new_left->the_Data = left_kernel;
+                new_right->the_Data = right_kernel;
+
+                grown_children = 0;
+                if(left_kernel.size()>=2)
+                {
+                    grown_children+=new_left->old_build_tree(param, training_f);
+                }
+                else
+                {
+                    grown_children++;
+                }
+                if(right_kernel.size()>=2)
+                {
+                    grown_children+=new_right->old_build_tree(param, training_f);
+                }
+                else
+                {
+                    grown_children++;
+                }
+
+                //assert(grown_children <= size_of_children);
+                if(printNewChildren)
+                    if(grown_children < size_of_children)
+                    {
+
+                        cout << "new chilldren :: :: " <<endl;
+                        cout << "    left ::" <<endl;
+                        int tmp = new_left->print_gate(2);
+                        cout << "    right ::" <<endl;
+                        tmp+=new_right->print_gate(2);
+                        assert(tmp == grown_children);
+                        cout << "old children :: ::" <<endl;
+                        cout << "    left :: "<<endl;
+                        left->print_gate(2);
+                        cout << "    right :: " << endl;
+                        right->print_gate(2);
+
+                    }
+
+            }
+
+            //assert(0);
+        }
+
+
+            }
+            else
+        {
+            if(print_the_imporant_bit)cout<<endl;
+        }
+            //cout << ret <<" "<< the_bit <<endl;
+            }
+
+            original_size++;
+            ret++;
+            if(grown_children != -1)
+        {
+            ret+=min(size_of_children, grown_children);
+        }
+            else
+        {
+            ret+=size_of_children;
+        }
+            new_size = ret;
+            //cout << "new size = " << new_size <<" ; original size " << original_size <<endl;
+            return ret;
+
+            }
+
+*/
+//summary_vector.resize(latice->numInputs, 0);
+/*negative_delta_ins_sum.resize(latice->numInputs, 0);
+ positive_delta_ins_sum.resize(latice->numInputs, 0);
+
+ bit_weighted_negative_dimension/*[0]* /.resize(latice->numInputs, 0);
+ bit_weighted_negative_dimension.resize(latice->numInputs, 0);
+ negative_dimensions.resize(latice->numInputs, 0);
+ positive_dimensions.resize(latice->numInputs, 0);*/
+
+/*dont_care_dimension_per_example.resize(latice->size(), vector<bit_signature>(latice->numInputs, 0));
+ care_dimension_per_example.resize(latice->size(), vector<bit_signature>(latice->numInputs, 0));
+ care_delta_ins_sum.resize(latice->size(), vector<bit_signature>(latice->numInputs, 0));
+ dont_care_delta_ins_sum.resize(latice->size(), vector<bit_signature>(latice->numInputs, 0));
+ max_delta.resize(latice->size(), vector<bit_signature>(latice->numInputs, 0));
+ non_dominating.resize(latice->size(), vector<vector<bit_signature> > ());*/
+/*vector<int> sort_positive_dimensions()
+ {
+ vector<pair<double, int> > sorted;
+ for(int i = 0;i<positive_dimensions.size();i++)
+ {
+ if(positive_dimensions[i]!=0)
+ {
+ sorted.push_back(mp(positive_dimensions[i], i));
+ }
+ }
+ sort_v(sorted);
+ rev_v(sorted);
+ vector<int> ret;
+ for(int i = 0;i<sorted.size();i++)
+ {
+ ret.push_back(sorted[i].s);
+ }
+ return ret;
+ }*/
+
+
+/*vector<int> sort_negative_dimensions(int id)
+ {
+ return sort_negative_dimensions(care_dimension_per_example[id]);
+ }
+ vector<int> sort_negative_dimensions()
+ {
+ return sort_negative_dimensions(negative_dimensions);
+ }
+
+ vector<int> sort_negative_dimensions(vector<bit_signature> the_v)
+ {
+ vector<pair<double, int> > sorted;
+ for(int i = 0;i<the_v.size();i++)
+ {
+ if(the_v[i]!=0)
+ {
+ sorted.push_back(mp(the_v[i], i));
+ }
+ }
+ sort_v(sorted);
+ vector<int> ret;
+ for(int i = 0;i<sorted.size();i++)
+ {
+ ret.push_back(sorted[i].s);
+ }
+ return ret;
+ }*/
+
+/*
+ bool update_and_test(Data *latice, int id, vector<bit_signature> &predict, double rate)
+ {
+ vector<pair<int, vector<bit_signature> > > last_state = test(latice).f;
+ backwardPropagate(latice->out[id], predict, rate, true);
+ vector<pair<int, vector<bit_signature> > > new_state = test(latice).f;
+
+ vector<bit_signature> newPredict = forwardPropagate(latice->in[id], 1);
+ vector<bit_signature> deltaPredict_actor = delta(predict, newPredict);
+
+ deltaPredict delta_actor = mp(id, deltaPredict_actor);
+
+ bool correct = check(latice->out[id], newPredict, accuarcy);
+ assert(new_state.size()==last_state.size());
+
+ if(correct)
+ {
+ for(int i=0;i<last_state.size();i++)
+ {
+ if(last_state[i].f==0&&new_state[i].f!=0)//from 0 wrong bits to more than 0 wrong bits
+ {
+ vector<bit_signature> deltaPredict_hint = delta(last_state[i].s, new_state[i].s);
+ deltaPredict delta_hint = mp(i, deltaPredict_hint);
+
+ vector<bit_signature> delta_actor_hint = delta(latice->in[id], latice->in[i]);
+ deltaState delta_state = mp(mp(delta_actor, delta_hint), delta_actor_hint);
+ delta_knowledge_graph[delta_state]++;
+ new_neurons[mp(mp(i, deltaPredict_hint), delta_actor_hint)]++;
+ clasify_neurons[delta_actor_hint].insert(delta_state);
+ count_neuron_activation[delta_actor_hint]++;
+
+ track_feature_of_dimensions(dimension_difficulty_score, delta_actor_hint);
+ }
+ else if(last_state[i].f != 0 && new_state[i].f == 0 && i != id)
+ {
+ learned_implication[make_pair(id, i)]++;
+
+ vector<bit_signature> delta_actor_hint = delta(latice->in[id], latice->in[i]);
+ track_feature_of_dimensions(dimension_easy_score, delta_actor_hint);
+ }
+ state_action_change[mp(mp(id,last_state[i].f==0), mp(new_state[i].f==0, i))]++;
+ }
+ }
+
+ /*for(int i = 0;i<latice->size();i++)
+ {
+ vector<bit_signature> delta_actor_hint = delta(latice->in[id], latice->in[i]);
+ for(int j = 0;j<delta_actor_hint.size();j++)
+ {
+
+ }
+ }* /
+
+predict = newPredict;
+
+return correct;
+}
+*/
+
+/*
+ bool rekTrain(Data *latice, int last_id)
+ {
+ if(last_id<0)return true;
+ for(int id=0;id<=last_id;id++)
+ {
+ vector<bit_signature> predict = forwardPropagate(latice->in[id], 1);
+ bool correct = check(latice->out[id], predict);
+ while(!correct)
+ {
+ while(!correct)
+ {
+ correct = update_and_test(latice, id, predict, 1.0);
+ }
+ rekTrain(latice, id-1);
+ predict = forwardPropagate(latice->in[id], 1);
+ correct = check(latice->out[id], predict);
+ }
+ }
+ return true;
+ }
+
+ void stackTrain(Data *latice)
+ {
+ assert(0);
+ }
+
+ batch get_batch_of_maximal_error_examples(Data* latice, double rate, int num_examples)
+ {
+ /*vector<bit_signature> all_1s(latice->numOutputs, 1);
+ return get_batch_of_maximal_error_examples(latice, rate, num_examples, all_1s);* /
+ return get_batch_of_maximal_error_examples(latice, rate, num_examples);//, summary_error_mask);
+ }
+
+ double get_difficulty_score(Data* latice, int id)
+ {
+ double ret = 0;
+ for(int i = 0;i<latice->size();i++)
+ {
+ vector<bit_signature> error = get_error(latice->out[i], forwardPropagate(latice->in[i], false));
+ for(int j = 0;j<latice->in[i].size();j++)
+ {
+ ret+=abs(latice->in[i][j] = latice->in[id][j])*(-the_model.care_dimension_per_example[i][j]-the_model.dont_care_dimension_per_example[i][j])*error[j];
+ }
+ }
+ return ret;
+ }
+
+ batch get_batch_of_maximally_difficult_examples(Data* latice, parameters param)
+ {
+ assert(param.batch_width>=1);
+ set<batch_element> ret_set;
+ for(int i = 0;i<latice->size();i++)
+ {
+ double difficulty_score = get_difficulty_score(latice, i);
+ batch_element try_element(i);
+ try_element.representative_error = difficulty_score;
+ ret_set.insert(try_element);
+ if(ret_set.size() > param.batch_width)
+ {
+ ret_set.erase(ret_set.begin());
+ }
+ }
+
+ batch ret;
+ for(set<batch_element>::iterator it = ret_set.begin(); it!= ret_set.end(); it++)
+ {
+ ret.push_back((*it));
+ }
+ rev_v(ret.elements);
+
+ return ret;
+ }*/
+/*void stupidTrain(Data *latice)
+ {
+ cout << "Stupud Train"<<endl;
+ bool Learned = false;
+ int numCycles = 0;
+ int itterations = 0;
+ while(!Learned)
+ {
+ numCycles++;
+ Learned = true;
+ for(int id=0;id<latice->sampleSize;id++)
+ {
+ itterations++;
+ vector<bit_signature> predict = forwardPropagate(latice->in[id], 1);
+ bool correct = check(latice->out[id], predict);
+
+ if(!correct)
+ {
+ Learned = false;
+ //latice->printTest(id, predict);
+ backwardPropagate(latice->out[id], predict, 1.0, true);
+ }
+ }
+ }
+ cout << "numCycles = " <<numCycles <<endl;
+ //cout << "itterations = " << itterations << endl;
+ }*/
+/*int min_batch_size = 0;
+     int max_batch_size = 1;
+     do
+     {
+     local_iterative_space = iterative_space;
+     expand_iterative_space(local_iterative_space, max_batch_size);
+     succeed = learner_treshold_test_on_iterative_sapce(learner, local_iterative_space, threshold);
+     if(succeed)
+     {
+     min_batch_size = max_batch_size;
+     max_batch_size*=2;
+     if(max_batch_size+i>=space_of_functions.size())
+     {
+     max_batch_size = (int)space_of_functions.size() - i;
+     succeed = false;
+     }
+     }
+     //cout << "succeed " << succeed << " min batch size = "<< min_batch_size << endl;
+     }while(succeed);
+
+
+     while(min_batch_size+1 < max_batch_size)
+     {
+     local_iterative_space = iterative_space;
+     int at_batch_size = (double)((min_batch_size+1) + max_batch_size)/2;
+
+     expand_iterative_space(local_iterative_space, at_batch_size);
+
+     succeed = learner_treshold_test_on_iterative_sapce(learner, local_iterative_space, threshold);
+
+     if(succeed)
+     {
+     min_batch_size = at_batch_size;
+     }
+     else
+     {
+     max_batch_size = at_batch_size;
+     }
+     //cout << "min max batch = " << min_batch_size <<" "<< max_batch_size <<endl;
+     }
+
+     batch_size = min_batch_size;
+
+     if(batch_size == 0)
+     {
+     //cout << "need to fix treshold" <<endl;
+     while(!succeed)
+     {
+     threshold*=2;
+     succeed = learner_treshold_test_on_iterative_sapce(learner, local_iterative_space, threshold);
+     //cout << "finding threshold = " << threshold <<endl;
+     }
+     batch_size = 1;
+     }
+
+     cout << "batch size = " << batch_size <<endl;
+     */
+
+
