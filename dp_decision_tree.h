@@ -18,14 +18,16 @@ public:
         //bool vis;
 
         int w;
-        int w_root;
+        int mask;
 
+        int input_id;
 
 
         int h;
-        int h_root;
 
         vector<string> dt_strings;
+        vector<pair<dp_ret*, dp_ret*> > children;
+
         int num_solutions;
 
         int local_era = -1;
@@ -37,7 +39,7 @@ public:
 
         void set_vis()
         {
-            era_counter = local_era;
+            local_era = era_counter;
         }
 
         void set_vis_false()
@@ -45,14 +47,44 @@ public:
             local_era = -1;
         }
 
-        void init(int _w, int _h, int _w_root, int _h_root, int _num_solutions)
+        int mask_size = -1;
+
+        string mask_to_string()
         {
+            if(mask >= 0)
+            {
+                return " mask=" + toBinaryString(mask, mask_size);
+            }
+            else
+            {
+                return "is_leaf";
+            }
+        }
+
+        string state_to_string()
+        {
+            string bracket = "(";
+            string name =
+                    bracket +
+                    "w=" + to_string(w) +
+                    " h=" + to_string(h) +
+                    mask_to_string() +
+                    " num_solutions=" + toDecimalString(num_solutions) +
+                    ")";
+            return name;
+        }
+
+        void init(int _mask_size, int _w, int _h, int _num_solutions)
+        {
+            mask_size = _mask_size;
             set_vis();
             w = _w,
             h = _h,
-            w_root = _w_root,
-            h_root = _h_root,
+
+            mask = -1;
+
             num_solutions = _num_solutions;
+            dt_strings.pb(state_to_string());
         }
 
         void init()
@@ -60,22 +92,26 @@ public:
             set_vis_false();
             w = (1<<30);
             h = (1<<30);
+            mask = -2;
             num_solutions = 0;
         }
 
-        void update(dp_ret left, dp_ret right, int mask_used, int track_num_strings)
+        void update(dp_ret left, dp_ret right, int mask_used, int _input_id, int track_num_strings)
         {
+            assert(left.mask_size == right.mask_size);
             assert(track_num_strings == -1);
+
+            mask_size = left.mask_size;
 
             bool update_dt_strings = false;
             if(left.w + right.w + 1 < w)
             {
                 w = left.w + right.w+1;
-                w_root = mask_used;
+                mask = mask_used;
+                input_id = _input_id;
 
 
                 h = max(left.h, right.h)+1;
-                h_root = mask_used;
 
                 num_solutions = left.num_solutions*right.num_solutions;
                 update_dt_strings = true;
@@ -99,10 +135,12 @@ public:
                     {
                         string bracket = "(";
                         string name = bracket +
-                                "mask_used=" + to_string(mask_used) +
+                                "state="+
+                                state_to_string()+
                                 " left=" + left.dt_strings[i] +
                                 " right=" + right.dt_strings[j] +
                                 ")";
+                        //cout << name << endl;
                         dt_strings.pb(name);
                     }
                 }
@@ -179,7 +217,7 @@ public:
                         assert(out == the_data->out[i][0]);
                     }
                 }
-                dp_data[mask].init(1, 1, mask, mask, 1);
+                dp_data[mask].init((1<<n), 1, 1, mask, mask, 1);
             }
             else
             {
@@ -226,7 +264,7 @@ public:
                     dp_ret left_ret = rek(n, &left, left_mask);
                     dp_ret right_ret = rek(n, &right, right_mask);
 
-                    ret.update(left_ret, right_ret, left_mask, -1);
+                    ret.update(left_ret, right_ret, left_mask, i, -1);
 
                 }
 

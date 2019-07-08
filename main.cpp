@@ -320,11 +320,48 @@ DecisionTreeScore get_opt_decision_tree_score(int n, int f)
     return size_opt;
 }
 
+string get_tab(int num_tabs)
+{
+    string ret = "";
+    for(int i = 0;i<num_tabs;i++)
+    {
+        ret+="    ";
+    }
+    return ret;
+}
+
+void print_dt_string(string dt_string,  int num_tabs)
+{
+    for(int i = 0;i<dt_string.size();i++)
+    {
+        cout << get_tab(num_tabs);
+        while(dt_string[i] != '(' && dt_string[i] != ')' && i < dt_string.size())
+        {
+            cout << dt_string[i];
+            i++;
+        }
+        if(dt_string[i] == '(')
+        {
+            cout << endl;
+            cout << get_tab(num_tabs) << dt_string[i] <<endl;
+            num_tabs++;
+        }
+        else if(dt_string[i] == ')')
+        {
+            cout << endl;
+            num_tabs--;
+            cout << get_tab(num_tabs) << dt_string[i] <<endl;
+        }
+    }
+}
+
 void print_decision_tree_of_f(int n, int f)
 {
     DecisionTreeScore score = get_opt_decision_tree_score(n, f);
     for(int i = 0;i<score.dt_strings.size();i++) {
-        cout << "dt=" << score.dt_strings[i] << " ";
+        string local_str = "(dt=" + score.dt_strings[i] + ")";
+        print_dt_string(local_str, 0);
+        cout << endl;
     }
     cout << endl;
 }
@@ -2432,7 +2469,7 @@ public:
 int main()
 {
 
-    print_all_dt_strings(3);
+    print_all_dt_strings(2);
     return 0;
 
     //srand(time(0));

@@ -142,7 +142,7 @@ void cout_vector(vector<int> v)
     cout << endl;
 }
 
-string toString(int n, int k)
+string toString(int n, int k, int l)
 {
     string ret = "";
     int init_n = n;
@@ -151,33 +151,26 @@ string toString(int n, int k)
         ret+=((n%k)+'0');
         n/=k;
     }
-    if(k==2)
-    {
-        if(ret.size()>3)
-        {
-            assert(0);
-        }
 
-        while(ret.size()<3)
+    if(l >= 0)
+    {
+        while (ret.size() < l)
         {
-            ret+="0";
+            ret += "0";
         }
     }
-    else if(init_n == 0)
-    {
-        ret = "0";
-    }
+
     rev_v(ret);
     return ret;
 }
 
-string toBinaryString(int n)
+string toBinaryString(int n, int l)
 {
-    return toString(n, 2);
+    return toString(n, 2, l);
 }
 string toDecimalString(int n)
 {
-    return toString(n, 10);
+    return toString(n, 10, -1);
 }
 
 string indent(int n)
