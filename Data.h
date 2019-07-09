@@ -1085,6 +1085,7 @@ public:
     int num_solutions = -1;
 
     vector<string> dt_strings;
+    vector<string> if_format_strings;
 
     DecisionTreeScore()
     {

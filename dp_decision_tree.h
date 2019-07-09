@@ -20,13 +20,11 @@ public:
         int w;
         int mask;
 
-        int input_id;
-
-
         int h;
 
         vector<string> dt_strings;
-        vector<pair<dp_ret*, dp_ret*> > children;
+        vector<string> if_format_strings;
+        vector<pair<int, pair<dp_ret*, dp_ret*> > > children;
 
         int num_solutions;
 
@@ -57,7 +55,7 @@ public:
             }
             else
             {
-                return "is_leaf";
+                return " is_leaf";
             }
         }
 
@@ -74,7 +72,7 @@ public:
             return name;
         }
 
-        void init(int _mask_size, int _w, int _h, int _num_solutions)
+        void init(int _mask_size, int _w, int _h, int _num_solutions, int out)
         {
             mask_size = _mask_size;
             set_vis();
@@ -85,6 +83,7 @@ public:
 
             num_solutions = _num_solutions;
             dt_strings.pb(state_to_string());
+            if_format_strings.pb("return " + to_string(out) + ";");
         }
 
         void init()
@@ -96,31 +95,34 @@ public:
             num_solutions = 0;
         }
 
-        void update(dp_ret left, dp_ret right, int mask_used, int _input_id, int track_num_strings)
+        void update(dp_ret* left, dp_ret* right, int mask_used, int _input_id, int track_num_strings)
         {
-            assert(left.mask_size == right.mask_size);
+            assert(left->mask_size == right->mask_size);
             assert(track_num_strings == -1);
 
-            mask_size = left.mask_size;
+            mask_size = left->mask_size;
 
             bool update_dt_strings = false;
-            if(left.w + right.w + 1 < w)
+            if(left->w + right->w + 1 < w)
             {
-                w = left.w + right.w+1;
+                w = left->w + right->w+1;
                 mask = mask_used;
-                input_id = _input_id;
 
 
-                h = max(left.h, right.h)+1;
+                h = max(left->h, right->h)+1;
 
-                num_solutions = left.num_solutions*right.num_solutions;
+                num_solutions = left->num_solutions*right->num_solutions;
                 update_dt_strings = true;
                 dt_strings.clear();
+                
+                children.clear();
+                if_format_strings.clear();
+                
                 assert(num_solutions < (1<<15));
             }
-            else if(left.w + right.w + 1 == w)
+            else if(left->w + right->w + 1 == w)
             {
-                num_solutions += left.num_solutions*right.num_solutions;
+                num_solutions += left->num_solutions*right->num_solutions;
                 update_dt_strings = true;
 
                 assert(num_solutions < (1<<15));
@@ -129,25 +131,36 @@ public:
             if(update_dt_strings)
             {
 
-                for(int i = 0; i < left.dt_strings.size(); i++)
+                assert(dt_strings.size() == if_format_strings.size());
+                assert(left->dt_strings.size() == left->if_format_strings.size());
+                assert(right->dt_strings.size() == right->if_format_strings.size());
+                for(int i = 0; i < left->dt_strings.size(); i++)
                 {
-                    for(int j = 0; j < right.dt_strings.size(); j++)
+                    for(int j = 0; j < right->dt_strings.size(); j++)
                     {
                         string bracket = "(";
                         string name = bracket +
                                 "state="+
                                 state_to_string()+
-                                " left=" + left.dt_strings[i] +
-                                " right=" + right.dt_strings[j] +
+                                " left=" + left->dt_strings[i] +
+                                " right=" + right->dt_strings[j] +
                                 ")";
                         //cout << name << endl;
                         dt_strings.pb(name);
+                        
+                        string if_format_str =
+                                "if(x["+to_string(_input_id)+ "]){" +
+                                left->if_format_strings[i] + "}else{" + right->if_format_strings[j] + "}";
+
+                        if_format_strings.pb(if_format_str);
                     }
                 }
+                
+                children.pb(mp(_input_id, mp(left, right)));
             }
-            /*if(max(left.h, right.h)+1 < h)
+            /*if(max(left->h, right->h)+1 < h)
             {
-                h = max(left.h, right.h)+1;
+                h = max(left->h, right->h)+1;
                 h_root = mask_used;
             }*/
         }
@@ -199,7 +212,7 @@ public:
     dp_ret dp_data[1<<16];
 
 
-    dp_ret rek(int n, datatype *the_data, int mask)
+    dp_ret* rek(int n, datatype *the_data, int mask)
     {
         assert(mask < (1<<16));
         if(!dp_data[mask].get_vis())
@@ -207,17 +220,19 @@ public:
             dp_data[mask].set_vis();
             if(the_data->is_constant())
             {
-                bit_signature out  = 0;
+                bit_signature out = 0;
                 for(int i = 0;i<the_data->size();i++)
                 {
-                    if(i == 0)
+                    if(i == 0) 
+                    {
                         out = the_data->out[i][0];
+                    }
                     else
                     {
                         assert(out == the_data->out[i][0]);
                     }
                 }
-                dp_data[mask].init((1<<n), 1, 1, mask, mask, 1);
+                dp_data[mask].init((1<<n), 1, 1, 1, out.value);
             }
             else
             {
@@ -261,10 +276,10 @@ public:
                     //cout << bitset<16>(right_mask).to_string() <<endl;
                     //cout << endl;
 
-                    dp_ret left_ret = rek(n, &left, left_mask);
-                    dp_ret right_ret = rek(n, &right, right_mask);
+                    dp_ret* left_ret = rek(n, &left, left_mask);
+                    dp_ret* right_ret = rek(n, &right, right_mask);
 
-                    ret.update(left_ret, right_ret, left_mask, i, -1);
+                    ret.update(left_ret, right_ret, left_mask, active_nodes[i], -1);
 
                 }
 
@@ -284,7 +299,7 @@ public:
             }
         }
 
-        return dp_data[mask];
+        return &dp_data[mask];
     }
 
     void print_tree(int n, int mask, int t)
@@ -308,8 +323,8 @@ public:
         }
 
         if(1 == dp_data[mask].w) return;
-        print_tree(n, dp_data[mask].w_root, t+1);
-        print_tree(n, mask-dp_data[mask].w_root, t+1);
+        print_tree(n, dp_data[mask].mask, t+1);
+        print_tree(n, mask-dp_data[mask].mask, t+1);
     }
 
     int rez[33];
@@ -347,15 +362,16 @@ public:
 
             if(n <= 4)
             {
-                dp_ret opt;
+                dp_ret* opt;
 
                 initialize_local_optimal_search();
 
                 opt = rek(n, &the_data, (1<<(1<<n))-1);
 
-                ret.size = opt.w;
-                ret.num_solutions = opt.num_solutions;
-                ret.dt_strings = opt.dt_strings;
+                ret.size = opt->w;
+                ret.num_solutions = opt->num_solutions;
+                ret.dt_strings = opt->dt_strings;
+                ret.if_format_strings = opt->if_format_strings;
             }
             else
             {
@@ -434,7 +450,7 @@ public:
 //        memset(vis, 0, sizeof(vis));
 //        memset(dp_w, 63, sizeof(dp_w));
 //        memset(dp_h, 63, sizeof(dp_h));
-        dp_ret ret = rek(n, &the_data, (1<<(1<<n))-1);
+        dp_ret* ret = rek(n, &the_data, (1<<(1<<n))-1);
 
         //the_data.printData("data");
 
@@ -472,13 +488,13 @@ public:
         }
         if(false || print_close_local_data_model)
         {
-            if(heuristic_ret-ret.w >= 2)
+            if(heuristic_ret-ret->w >= 2)
             {
-                the_data.printData(to_string(heuristic_ret-ret.w)+" errors");
+                the_data.printData(to_string(heuristic_ret-ret->w)+" errors");
                 print_tree(n, (1<<(1<<n))-1, 0);
                 best_tree.print_gate(0);
             }
-            if(false && ret.w == 11 && heuristic_ret-ret.w == 0)
+            if(false && ret->w == 11 && heuristic_ret-ret->w == 0)
             {
                 the_data.printData("0 errors");
                 print_tree(n, (1<<(1<<n))-1, 0);
@@ -487,11 +503,11 @@ public:
             }
         }
         //cout << "end" <<endl;
-        rez[ret.w]+=heuristic_ret;
-        num_rez[ret.w]++;
-        num_correct[ret.w]+=(heuristic_ret == ret.w);
-        num_wrong[ret.w][heuristic_ret-ret.w]++;
-        cout << ret.w <<" "<< (double)rez[ret.w]/num_rez[ret.w] <<endl;
+        rez[ret->w]+=heuristic_ret;
+        num_rez[ret->w]++;
+        num_correct[ret->w]+=(heuristic_ret == ret->w);
+        num_wrong[ret->w][heuristic_ret-ret->w]++;
+        cout << ret->w <<" "<< (double)rez[ret->w]/num_rez[ret->w] <<endl;
     }
 
     void run()

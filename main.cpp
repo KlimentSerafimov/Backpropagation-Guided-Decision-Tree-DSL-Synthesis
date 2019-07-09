@@ -330,23 +330,23 @@ string get_tab(int num_tabs)
     return ret;
 }
 
-void print_dt_string(string dt_string,  int num_tabs)
+void print_dt_string(string dt_string,  int num_tabs, char open, char close)
 {
     for(int i = 0;i<dt_string.size();i++)
     {
         cout << get_tab(num_tabs);
-        while(dt_string[i] != '(' && dt_string[i] != ')' && i < dt_string.size())
+        while(dt_string[i] != open && dt_string[i] != close && i < dt_string.size())
         {
             cout << dt_string[i];
             i++;
         }
-        if(dt_string[i] == '(')
+        if(dt_string[i] == open)
         {
             cout << endl;
             cout << get_tab(num_tabs) << dt_string[i] <<endl;
             num_tabs++;
         }
-        else if(dt_string[i] == ')')
+        else if(dt_string[i] == close)
         {
             cout << endl;
             num_tabs--;
@@ -357,10 +357,16 @@ void print_dt_string(string dt_string,  int num_tabs)
 
 void print_decision_tree_of_f(int n, int f)
 {
+    for(int i = 0; i <(1<<n);i++)
+    {
+        cout << toBinaryString(i, n) <<" " << ((f & (1<<i))  != 0) <<endl;
+        //cout << toBinaryString(f, (1<<n)) <<endl;
+    }
     DecisionTreeScore score = get_opt_decision_tree_score(n, f);
+    assert(score.dt_strings.size() == score.if_format_strings.size());
     for(int i = 0;i<score.dt_strings.size();i++) {
-        string local_str = "(dt=" + score.dt_strings[i] + ")";
-        print_dt_string(local_str, 0);
+        string local_str = score.if_format_strings[i];//"(dt=" + score.dt_strings[i] + ")";
+        print_dt_string(local_str, 0, '{', '}');
         cout << endl;
     }
     cout << endl;
@@ -396,6 +402,7 @@ void print_all_dt_strings(int n)
     for(int i = 0; i < (1<<(1<<n)); i++)
     {
         print_decision_tree_of_f(n, i);
+        cout << "-------------------" << endl;
     }
 }
 
