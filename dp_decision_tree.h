@@ -9,170 +9,176 @@
 
 int era_counter = 0;
 
-template<typename datatype>
-class dp_decision_tree
+
+
+struct dp_ret
 {
-public:
-    struct dp_ret
+    //bool vis;
+
+    int w;
+    int mask;
+
+    int h;
+
+    vector<string> dt_strings;
+    vector<string> if_cpp_format_strings;
+    vector<string> if_python_format_strings;
+
+    vector<pair<int, pair<dp_ret*, dp_ret*> > > children;
+
+    int num_solutions;
+
+    int local_era = -1;
+
+    bool get_vis()
     {
-        //bool vis;
+        return local_era == era_counter;
+    }
 
-        int w;
-        int mask;
+    void set_vis()
+    {
+        local_era = era_counter;
+    }
 
-        int h;
+    void set_vis_false()
+    {
+        local_era = -1;
+    }
 
-        vector<string> dt_strings;
-        vector<string> if_cpp_format_strings;
-        vector<string> if_python_format_strings;
-        vector<pair<int, pair<dp_ret*, dp_ret*> > > children;
+    int mask_size = -1;
 
-        int num_solutions;
-
-        int local_era = -1;
-
-        bool get_vis()
+    string mask_to_string()
+    {
+        if(mask >= 0)
         {
-            return local_era == era_counter;
+            return " mask=" + toBinaryString(mask, mask_size);
+        }
+        else
+        {
+            return " is_leaf";
+        }
+    }
+
+    string state_to_string()
+    {
+        string bracket = "(";
+        string name = bracket +
+                      "w=" + to_string(w) +
+                      " h=" + to_string(h) +
+                      mask_to_string() +
+                      " num_solutions=" + toDecimalString(num_solutions) +
+                      ")";
+        return name;
+    }
+
+    void init(int _mask_size, int _w, int _h, int _num_solutions, int out)
+    {
+        mask_size = _mask_size;
+        set_vis();
+        w = _w,
+        h = _h,
+
+        mask = -1;
+
+        num_solutions = _num_solutions;
+        dt_strings.pb(state_to_string());
+        if_cpp_format_strings.pb("return " + to_string(out) + ";");
+        if_python_format_strings.pb("return " + to_string(out));
+    }
+
+    void init()
+    {
+        set_vis_false();
+        w = (1<<30);
+        h = (1<<30);
+        mask = -2;
+        num_solutions = 0;
+        if_cpp_format_strings.clear();
+        if_python_format_strings.clear();
+        dt_strings.clear();
+    }
+
+    dp_ret()
+    {
+        init();
+    }
+
+    void update(dp_ret* left, dp_ret* right, int mask_used, int _input_id, int track_num_strings)
+    {
+        assert(left->mask_size == right->mask_size);
+        assert(track_num_strings == -1);
+
+        mask_size = left->mask_size;
+
+        bool update_dt_strings = false;
+        if(left->w + right->w + 1 < w)
+        {
+            w = left->w + right->w+1;
+            mask = mask_used;
+
+
+            h = max(left->h, right->h)+1;
+
+            num_solutions = left->num_solutions*right->num_solutions;
+            update_dt_strings = true;
+            dt_strings.clear();
+
+            children.clear();
+            if_cpp_format_strings.clear();
+            if_python_format_strings.clear();
+
+            assert(num_solutions < (1<<15));
+        }
+        else if(left->w + right->w + 1 == w)
+        {
+            num_solutions += left->num_solutions*right->num_solutions;
+            update_dt_strings = true;
+
+            assert(num_solutions < (1<<15));
         }
 
-        void set_vis()
+        if(update_dt_strings)
         {
-            local_era = era_counter;
-        }
 
-        void set_vis_false()
-        {
-            local_era = -1;
-        }
-
-        int mask_size = -1;
-
-        string mask_to_string()
-        {
-            if(mask >= 0)
+            assert(if_python_format_strings.size() == if_cpp_format_strings.size());
+            assert(dt_strings.size() == if_cpp_format_strings.size());
+            assert(left->dt_strings.size() == left->if_cpp_format_strings.size());
+            assert(right->dt_strings.size() == right->if_cpp_format_strings.size());
+            for(int i = 0; i < left->dt_strings.size(); i++)
             {
-                return " mask=" + toBinaryString(mask, mask_size);
-            }
-            else
-            {
-                return " is_leaf";
-            }
-        }
-
-        string state_to_string()
-        {
-            string bracket = "(";
-            string name =
-                    bracket +
-                    "w=" + to_string(w) +
-                    " h=" + to_string(h) +
-                    mask_to_string() +
-                    " num_solutions=" + toDecimalString(num_solutions) +
-                    ")";
-            return name;
-        }
-
-        void init(int _mask_size, int _w, int _h, int _num_solutions, int out)
-        {
-            mask_size = _mask_size;
-            set_vis();
-            w = _w,
-            h = _h,
-
-            mask = -1;
-
-            num_solutions = _num_solutions;
-            dt_strings.pb(state_to_string());
-            if_cpp_format_strings.pb("return " + to_string(out) + ";");
-            if_python_format_strings.pb("return " + to_string(out));
-        }
-
-        void init()
-        {
-            set_vis_false();
-            w = (1<<30);
-            h = (1<<30);
-            mask = -2;
-            num_solutions = 0;
-        }
-
-        void update(dp_ret* left, dp_ret* right, int mask_used, int _input_id, int track_num_strings)
-        {
-            assert(left->mask_size == right->mask_size);
-            assert(track_num_strings == -1);
-
-            mask_size = left->mask_size;
-
-            bool update_dt_strings = false;
-            if(left->w + right->w + 1 < w)
-            {
-                w = left->w + right->w+1;
-                mask = mask_used;
-
-
-                h = max(left->h, right->h)+1;
-
-                num_solutions = left->num_solutions*right->num_solutions;
-                update_dt_strings = true;
-                dt_strings.clear();
-                
-                children.clear();
-                if_cpp_format_strings.clear();
-                if_python_format_strings.clear();
-                
-                assert(num_solutions < (1<<15));
-            }
-            else if(left->w + right->w + 1 == w)
-            {
-                num_solutions += left->num_solutions*right->num_solutions;
-                update_dt_strings = true;
-
-                assert(num_solutions < (1<<15));
-            }
-
-            if(update_dt_strings)
-            {
-
-                assert(if_python_format_strings.size() == if_cpp_format_strings.size());
-                assert(dt_strings.size() == if_cpp_format_strings.size());
-                assert(left->dt_strings.size() == left->if_cpp_format_strings.size());
-                assert(right->dt_strings.size() == right->if_cpp_format_strings.size());
-                for(int i = 0; i < left->dt_strings.size(); i++)
+                for(int j = 0; j < right->dt_strings.size(); j++)
                 {
-                    for(int j = 0; j < right->dt_strings.size(); j++)
-                    {
-                        string bracket = "(";
-                        string name = bracket +
-                                "state="+
-                                state_to_string()+
-                                " left=" + left->dt_strings[i] +
-                                " right=" + right->dt_strings[j] +
-                                ")";
-                        //cout << name << endl;
-                        dt_strings.pb(name);
+                    string bracket = "(";
+                    string name = bracket +
+                                  "state="+
+                                  state_to_string()+
+                                  " left=" + left->dt_strings[i] +
+                                  " right=" + right->dt_strings[j] +
+                                  ")";
+                    //cout << name << endl;
+                    dt_strings.pb(name);
 
-                        string if_cpp_format_str =
-                                "if(x["+to_string(_input_id)+ "]){" +
-                                left->if_cpp_format_strings[i] + "}else{" + right->if_cpp_format_strings[j] + "}";
+                    string if_cpp_format_str =
+                            "if(x["+to_string(_input_id)+ "]){" +
+                            left->if_cpp_format_strings[i] + "}else{" + right->if_cpp_format_strings[j] + "}";
 
-                        string if_python_format_str =
-                                "if x["+to_string(_input_id)+ "] == 1:{" +
-                                left->if_python_format_strings[i] + "}else:{" + right->if_python_format_strings[j] + "}x";
+                    string if_python_format_str =
+                            "if x["+to_string(_input_id)+ "] == 1:{" +
+                            left->if_python_format_strings[i] + "}else:{" + right->if_python_format_strings[j] + "}";
 
-                        if_cpp_format_strings.pb(if_cpp_format_str);
-                        if_python_format_strings.pb(if_python_format_str);
-                    }
+                    if_cpp_format_strings.pb(if_cpp_format_str);
+                    if_python_format_strings.pb(if_python_format_str);
                 }
-                
-                children.pb(mp(_input_id, mp(left, right)));
             }
-            /*if(max(left->h, right->h)+1 < h)
-            {
-                h = max(left->h, right->h)+1;
-                h_root = mask_used;
-            }*/
+
+            children.pb(mp(_input_id, mp(left, right)));
         }
+        /*if(max(left->h, right->h)+1 < h)
+        {
+            h = max(left->h, right->h)+1;
+            h_root = mask_used;
+        }*/
+    }
 
 //        void update(
 //                int mask,
@@ -201,12 +207,19 @@ public:
 //                dp_h_root[mask] = h_root;
 //            }* /
 //        }
-        string print()
-        {
-            string ret = "w = " + to_string(w) + " h = "+ to_string(h);
-            return ret;
-        }
-    };
+    string print()
+    {
+        string ret = "w = " + to_string(w) + " h = "+ to_string(h);
+        return ret;
+    }
+};
+
+dp_ret dp_data[1<<16];
+
+template<typename datatype>
+class dp_decision_tree
+{
+public:
 
 //    bool vis[(1<<16)];
 //
@@ -218,21 +231,25 @@ public:
 //
 //    int dp_num_solutions[(1<<16)];
 
-    dp_ret dp_data[1<<16];
+    dp_decision_tree()
+    {
+
+    }
 
 
-    dp_ret* rek(int n, datatype *the_data, int mask)
+    dp_ret* rek(int n, datatype* the_data, int mask)
     {
         assert(mask < (1<<16));
         if(!dp_data[mask].get_vis())
         {
+            dp_data[mask].init();
             dp_data[mask].set_vis();
             if(the_data->is_constant())
             {
                 bit_signature out = 0;
                 for(int i = 0;i<the_data->size();i++)
                 {
-                    if(i == 0) 
+                    if(i == 0)
                     {
                         out = the_data->out[i][0];
                     }
@@ -381,7 +398,6 @@ public:
                 ret.num_solutions = opt->num_solutions;
                 ret.dt_strings = opt->dt_strings;
                 ret.if_cpp_format_strings = opt->if_cpp_format_strings;
-                assert(0);
                 ret.if_python_format_strings = opt->if_python_format_strings;
             }
             else

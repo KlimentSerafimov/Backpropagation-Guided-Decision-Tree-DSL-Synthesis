@@ -307,7 +307,7 @@ public:
     }
 };
 
-DecisionTreeScore get_opt_decision_tree_score(int n, int func)
+DecisionTreeScore _get_opt_decision_tree_score(int n, int func)
 {
     //assert(0);
     cout << "here?" <<endl;
@@ -325,6 +325,11 @@ DecisionTreeScore get_opt_decision_tree_score(int n, int func)
     return size_opt;
 }
 
+void ttmp(int n, int func, Data local_new_data)
+{
+    //return size_opt;
+}
+
 string get_tab(int num_tabs)
 {
     string ret;
@@ -335,7 +340,7 @@ string get_tab(int num_tabs)
     return ret;
 }
 
-string print_dt_string(string dt_string,  int num_tabs, char open, char close)
+string print_dt_string(string dt_string,  int num_tabs, char open, char close, bool do_print)
 {
     string tabbed_string;
     for(int i = 0;i<dt_string.size();i++)
@@ -350,11 +355,13 @@ string print_dt_string(string dt_string,  int num_tabs, char open, char close)
         }
         if(dt_string[i] == open)
         {
-
             tabbed_string += "\n";
             cout << "\n";
-            tabbed_string += get_tab(num_tabs) + dt_string[i] + "\n";
-            cout << get_tab(num_tabs) << dt_string[i] << "\n";
+
+            if(do_print) {
+                tabbed_string += get_tab(num_tabs) + dt_string[i] + "\n";
+                cout << get_tab(num_tabs) << dt_string[i] << "\n";
+            }
             num_tabs++;
         }
         else if(dt_string[i] == close)
@@ -362,8 +369,11 @@ string print_dt_string(string dt_string,  int num_tabs, char open, char close)
             tabbed_string += "\n";
             cout << "\n";
             num_tabs--;
-            tabbed_string += get_tab(num_tabs) + dt_string[i] + "\n";
-            cout << get_tab(num_tabs) << dt_string[i] <<endl;
+
+            if(do_print) {
+                tabbed_string += get_tab(num_tabs) + dt_string[i] + "\n";
+                cout << get_tab(num_tabs) << dt_string[i] << endl;
+            }
         }
     }
     //fout_dataset << tabbed_string << endl;
@@ -419,13 +429,13 @@ string print_f(int n, int f)
 
 string print_decision_tree_of_f_cpp(int n, int func)
 {
-    string tabbed_string;
     cout << "here in print_decision_tree_of_f_cpp" <<endl;
-    DecisionTreeScore score = get_opt_decision_tree_score(n, func);
+    DecisionTreeScore score = _get_opt_decision_tree_score(n, func);
+    string tabbed_string;
     assert(score.dt_strings.size() == score.if_cpp_format_strings.size());
     for(int i = 0;i<score.dt_strings.size();i++) {
         string local_str = score.if_cpp_format_strings[i];//"(dt=" + score.dt_strings[i] + ")";
-        tabbed_string+=print_dt_string(local_str, 0, '{', '}');
+        tabbed_string+=print_dt_string(local_str, 0, '{', '}', true);
         tabbed_string+="\n";
         cout << "\n";
     }
@@ -435,23 +445,23 @@ string print_decision_tree_of_f_cpp(int n, int func)
     return tabbed_string;
 }
 
-string print_decision_tree_of_f_python(int n, int func)
-{
-    string tabbed_string;
-    cout << "here in print_decision_tree_of_f_python" <<endl;
-    DecisionTreeScore score = get_opt_decision_tree_score(n, func);
-    assert(score.dt_strings.size() == score.if_cpp_format_strings.size());
-    for(int i = 0;i<score.dt_strings.size();i++) {
-        string local_str = score.if_python_format_strings[i];//"(dt=" + score.dt_strings[i] + ")";
-        tabbed_string+=print_dt_string_python(local_str, 0, '{', '}');
-        tabbed_string+="\n";
-        cout << "\n";
-    }
-    tabbed_string+="\n";
-    cout << "\n";
-    //fout_dataset << tabbed_string << endl;
-    return tabbed_string;
-}
+//string print_decision_tree_of_f_python(int n, int func)
+//{
+//    string tabbed_string;
+//    cout << "here in print_decision_tree_of_f_python" <<endl;
+//    DecisionTreeScore score = _get_opt_decision_tree_score(n, func);
+//    assert(score.dt_strings.size() == score.if_cpp_format_strings.size());
+//    for(int i = 0;i<score.dt_strings.size();i++) {
+//        string local_str = score.if_python_format_strings[i];//"(dt=" + score.dt_strings[i] + ")";
+//        tabbed_string+=print_dt_string_python(local_str, 0, '{', '}');
+//        tabbed_string+="\n";
+//        cout << "\n";
+//    }
+//    tabbed_string+="\n";
+//    cout << "\n";
+//    //fout_dataset << tabbed_string << endl;
+//    return tabbed_string;
+//}
 
 vector<f_and_score> get_smallest_f(int n)
 {
@@ -469,7 +479,7 @@ vector<f_and_score> get_smallest_f(int n)
     for(int i = 0;i<fs.size();i++)
     {
         cout << "here in get_smallest_f" <<endl;
-        ordering.pb(f_and_score(fs[i], get_opt_decision_tree_score(n, fs[i])));
+        ordering.pb(f_and_score(fs[i], _get_opt_decision_tree_score(n, fs[i])));
     }
 
     //sort_v(ordering);
@@ -480,7 +490,7 @@ vector<f_and_score> get_smallest_f(int n)
 
 void print_all_dt_strings(int n)
 {
-    string tabbed_string = "How high are you?\n";
+    string tabbed_string = "";
     assert(n <= 4);
     for(int i = 0; i < (1<<(1<<n)); i++)
     {
@@ -490,11 +500,38 @@ void print_all_dt_strings(int n)
         tabbed_string += "\")\n";
         tabbed_string += "File file = File(name=\"dt_of_f " + toBinaryString(i, (1<<n)) + "\",";
         tabbed_string += "dataset=\"";
-        tabbed_string += print_decision_tree_of_f_python(n, i) + "\")\n";
+
+        int func = i;
+        cout << "here in print_decision_tree_of_f_python" <<endl;
+
+        Data local_new_data = Data();
+        local_new_data.init_exaustive_table_with_unary_output(n, func);
+
+        dp_decision_tree<Data> decision_tree_solver = dp_decision_tree<Data>();
+        DecisionTreeScore size_opt;
+        net::parameters cutoff_parametes;
+        size_opt = decision_tree_solver.synthesize_decision_tree_and_get_size
+                (cutoff_parametes, n, local_new_data, optimal);
+
+        DecisionTreeScore score = size_opt;
+
+        string local_tabbed_string;
+        assert(score.dt_strings.size() == score.if_python_format_strings.size());
+        for(int i = 0;i<score.dt_strings.size();i++) {
+            string local_str = score.if_python_format_strings[i];//"(dt=" + score.dt_strings[i] + ")";
+            local_tabbed_string+=print_dt_string(local_str, 0, '{', '}', false);
+            local_tabbed_string+="\n";
+            cout << "\n";
+        }
+
+        local_tabbed_string+="\n";
+        cout << "\n";
+
+        tabbed_string += local_tabbed_string + "\")\n";
         tabbed_string += "-------------------";
         cout << "-------------------" << endl;
     }
-    fout_dataset << tabbed_string << endl;
+    //fout_dataset << tabbed_string << endl;
 }
 
 firstOrderDataset<DataAndScore> init_random_test_set(int n)
@@ -539,7 +576,7 @@ firstOrderDataset<DataAndScore> init_random_test_set(int n)
         long long sample_id = (first + second);
 
         //cout << first << " " << second << " "<< sample_id << endl;
-        sample_ids.pb(f_and_score(sample_id, get_opt_decision_tree_score(n, sample_id)));
+        sample_ids.pb(f_and_score(sample_id, _get_opt_decision_tree_score(n, sample_id)));
     }
 
     //test
@@ -769,7 +806,7 @@ firstOrderDataset<DataAndScore> init_smallest_train_set(int n)
             long long sample_id = (first + second);
 
             //cout << first << " " << second << " "<< sample_id << endl;
-            sample_ids.pb(f_and_score(sample_id, get_opt_decision_tree_score(n, sample_id)));
+            sample_ids.pb(f_and_score(sample_id, _get_opt_decision_tree_score(n, sample_id)));
         }
     }
     else
@@ -2567,7 +2604,7 @@ public:
 int main()
 {
 
-    print_all_dt_strings(2);
+    print_all_dt_strings(3);
     return 0;
 
     //srand(time(0));

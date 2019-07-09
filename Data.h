@@ -882,11 +882,11 @@ public:
 
     Data()
     {
-        cout << "HERE?" << endl;
     }
 
-    virtual void init_exaustive_table_with_unary_output(int num_bits, long long output)
+    void init_exaustive_table_with_unary_output(int num_bits, long long output)
     {
+        cout << "HERE" <<endl;
         for(int i = 0;i<(1<<num_bits);i++)
         {
             vector<bit_signature> new_in;
