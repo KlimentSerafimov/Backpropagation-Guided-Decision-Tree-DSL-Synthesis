@@ -23,7 +23,8 @@ public:
         int h;
 
         vector<string> dt_strings;
-        vector<string> if_format_strings;
+        vector<string> if_cpp_format_strings;
+        vector<string> if_python_format_strings;
         vector<pair<int, pair<dp_ret*, dp_ret*> > > children;
 
         int num_solutions;
@@ -83,7 +84,8 @@ public:
 
             num_solutions = _num_solutions;
             dt_strings.pb(state_to_string());
-            if_format_strings.pb("return " + to_string(out) + ";");
+            if_cpp_format_strings.pb("return " + to_string(out) + ";");
+            if_python_format_strings.pb("return " + to_string(out));
         }
 
         void init()
@@ -116,7 +118,8 @@ public:
                 dt_strings.clear();
                 
                 children.clear();
-                if_format_strings.clear();
+                if_cpp_format_strings.clear();
+                if_python_format_strings.clear();
                 
                 assert(num_solutions < (1<<15));
             }
@@ -131,9 +134,10 @@ public:
             if(update_dt_strings)
             {
 
-                assert(dt_strings.size() == if_format_strings.size());
-                assert(left->dt_strings.size() == left->if_format_strings.size());
-                assert(right->dt_strings.size() == right->if_format_strings.size());
+                assert(if_python_format_strings.size() == if_cpp_format_strings.size());
+                assert(dt_strings.size() == if_cpp_format_strings.size());
+                assert(left->dt_strings.size() == left->if_cpp_format_strings.size());
+                assert(right->dt_strings.size() == right->if_cpp_format_strings.size());
                 for(int i = 0; i < left->dt_strings.size(); i++)
                 {
                     for(int j = 0; j < right->dt_strings.size(); j++)
@@ -147,12 +151,17 @@ public:
                                 ")";
                         //cout << name << endl;
                         dt_strings.pb(name);
-                        
-                        string if_format_str =
-                                "if(x["+to_string(_input_id)+ "]){" +
-                                left->if_format_strings[i] + "}else{" + right->if_format_strings[j] + "}";
 
-                        if_format_strings.pb(if_format_str);
+                        string if_cpp_format_str =
+                                "if(x["+to_string(_input_id)+ "]){" +
+                                left->if_cpp_format_strings[i] + "}else{" + right->if_cpp_format_strings[j] + "}";
+
+                        string if_python_format_str =
+                                "if x["+to_string(_input_id)+ "] == 1:{" +
+                                left->if_python_format_strings[i] + "}else:{" + right->if_python_format_strings[j] + "}x";
+
+                        if_cpp_format_strings.pb(if_cpp_format_str);
+                        if_python_format_strings.pb(if_python_format_str);
                     }
                 }
                 
@@ -371,7 +380,9 @@ public:
                 ret.size = opt->w;
                 ret.num_solutions = opt->num_solutions;
                 ret.dt_strings = opt->dt_strings;
-                ret.if_format_strings = opt->if_format_strings;
+                ret.if_cpp_format_strings = opt->if_cpp_format_strings;
+                assert(0);
+                ret.if_python_format_strings = opt->if_python_format_strings;
             }
             else
             {

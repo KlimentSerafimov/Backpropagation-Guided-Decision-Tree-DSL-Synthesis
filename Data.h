@@ -882,7 +882,7 @@ public:
 
     Data()
     {
-
+        cout << "HERE?" << endl;
     }
 
     virtual void init_exaustive_table_with_unary_output(int num_bits, long long output)
@@ -1085,7 +1085,9 @@ public:
     int num_solutions = -1;
 
     vector<string> dt_strings;
-    vector<string> if_format_strings;
+    vector<string> if_cpp_format_strings;
+    vector<string> if_python_format_strings;
+
 
     DecisionTreeScore()
     {
