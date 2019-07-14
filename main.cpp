@@ -488,6 +488,8 @@ vector<f_and_score> get_smallest_f(int n)
 
 }
 
+
+
 void print_all_dt_strings(int n)
 {
     string tabbed_string = "";

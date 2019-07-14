@@ -383,9 +383,6 @@ public:
 
         if(synthesizer_type == optimal)
         {
-
-
-
             if(n <= 4)
             {
                 dp_ret* opt;
