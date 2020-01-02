@@ -5,19 +5,21 @@
 #ifndef NEURAL_GUIDED_DECISION_TREE_SYNTHESIS_LAYERED_GRAPH_H
 #define NEURAL_GUIDED_DECISION_TREE_SYNTHESIS_LAYERED_GRAPH_H
 
-class layered_graph
+#include "Layer.h"
+
+class LayeredGraph
 {
 public:
-    layered_graph(){};
+    LayeredGraph(){};
     
     //Graph new_graph;
     
-    layered_graph(layered_graph const &_leyered_graph)
+    LayeredGraph(LayeredGraph const &_leyered_graph)
     {
         layers = _leyered_graph.layers;
     }
     
-    vector<layer> layers;
+    vector<Layer> layers;
     
     void perturb(double rate)
     {
@@ -55,7 +57,7 @@ public:
         while(neuronsPerLayer[at_layer+1]!=-1)
         {
             //assert(neuronsPerLayer[at_layer+1] != 3);
-            layers.pb(layer(neuronsPerLayer[at_layer], neuronsPerLayer[at_layer+1]));
+            layers.push_back(Layer(neuronsPerLayer[at_layer], neuronsPerLayer[at_layer+1]));
             at_layer++;
         }
     }
@@ -78,7 +80,7 @@ public:
         {
             //assert(neuronsPerLayer[at_layer+1] != 3);
             
-            layers.pb(layer(neuronsPerLayer[at_layer], neuronsPerLayer[at_layer+1]));
+            layers.push_back(Layer(neuronsPerLayer[at_layer], neuronsPerLayer[at_layer+1]));
             at_layer++;
         }
         int all_w_idx = 0;
@@ -86,9 +88,9 @@ public:
         {
             for(int j = 0;j<layers[i].neurons.size();j++)
             {
-                for(int k = 0;k<layers[i].neurons[j].w.size();k++)
+                for(int k = 0;k<layers[i].neurons[j].weights.size();k++)
                 {
-                    layers[i].neurons[j].w[k].value = all_w[all_w_idx++].value;
+                    layers[i].neurons[j].weights[k].value = all_w[all_w_idx++].value;
                 }
                 layers[i].neurons[j].t = all_w[all_w_idx++].value;
             }
@@ -100,7 +102,7 @@ public:
     
     void single_construct_neuron(vector<int> special)
     {
-        layers.pb(layer(numInputs, 1));
+        layers.push_back(Layer(numInputs, 1));
         for(int i = 0;i<special.size();i++)
         {
             layers[0].disregard_input(special[i]);
@@ -125,12 +127,12 @@ public:
             new_age_neurons.push_back(v_pair);
             
         }
-        layers.push_back(layer(next_layer_num_inputs, 0));
+        layers.push_back(Layer(next_layer_num_inputs, 0));
         for(int i = 0;i<new_age_neurons.size();i++)
         {
             layers[1].add_neuron_with_inputs(new_age_neurons[i]);
         }
-        layers.push_back(layer((int)new_age_neurons.size(), numOutputs));
+        layers.push_back(Layer((int)new_age_neurons.size(), numOutputs));
     }
     
     vector<bit_signature> forwardPropagate(vector<bit_signature> input, bool remember)
@@ -163,7 +165,7 @@ public:
         }
         for(int j=layers.size()-1; j>=0; j--)
         {
-            //cout << "layer " << j <<": ";
+            //cout << "Layer " << j <<": ";
             /*for(int i = 0;i<Derivatives.size();i++)
             {
                 cout << Derivatives[i] <<" ";
@@ -219,9 +221,9 @@ public:
         cout << endl << "}" <<endl;
     }
     
-    layered_graph copy()
+    LayeredGraph copy()
     {
-        layered_graph ret = layered_graph();
+        LayeredGraph ret = LayeredGraph();
         ret.layers = layers;
         return ret;
     }

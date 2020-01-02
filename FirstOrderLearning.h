@@ -5,34 +5,34 @@
 #ifndef NEURAL_GUIDED_DECISION_TREE_SYNTHESIS_FIRSTORDERLEARNING_H
 #define NEURAL_GUIDED_DECISION_TREE_SYNTHESIS_FIRSTORDERLEARNING_H
 
-#include "net.h"
+#include "NeuralNetwork.h"
 #include "Data.h"
 #include "Header.h"
-#include "net_and_score.h"
+#include "NeuralNetworkAndScore.h"
 #include "Policy.h"
 
-ofstream tout("trace.out");
+static ofstream tout("trace.out");
 
 template<typename datatype>
-class firstOrderLearning
+class FirstOrderLearning
 {
 public:
 
-    firstOrderLearning()
+    FirstOrderLearning()
     {
 
     }
 
-    net step(net prev_step, double rate)
+    NeuralNetwork step(NeuralNetwork prev_step, double rate)
     {
         //prev_step.printWeights();
-        net ret = net(prev_step);
+        NeuralNetwork ret = NeuralNetwork(prev_step);
         ret.perturb(rate);
         //ret.printWeights();
         return ret;
     }
 
-    net deep_step(net prev_step, double rate) {
+    NeuralNetwork deep_step(NeuralNetwork prev_step, double rate) {
         int backtrack_potential = 3;
 
         int search_width = 3;
@@ -54,25 +54,25 @@ public:
 
         //ALSO DO DP ON THE STRUCTURE OF THE NEURAL NETWORK. NO NEED FOR ALL CONNECTED
 
-        return net();
+        return NeuralNetwork();
     }
 
     /*void progressive_train(int n)
     {
-        net_and_score learner = net(n, 2*n, 1);
+        NeuralNetworkAndScore learner = NeuralNetwork(n, 2*n, 1);
 
         int k_iter = 30;
         //performs meta training, using the max error after k iter of a task as signal.
 
 
-        vector<datatype> local_data;
+        vector<Datatype> local_data;
 
         for(int i = 0;i<data_of_functions.size();)
         {
             int data_step_size = 5;
             for(int k = 0; k < data_step_size && i<data_of_functions.size();i++, k++)
             {
-                local_data.pb(data_of_functions[i]);
+                local_data.push_back(data_of_functions[i]);
             }
             reptile_SA_train(learner, local_data, k_iter);
             evaluate_learner(learner, test_data_of_functions, true, 300);
@@ -81,7 +81,7 @@ public:
     }*/
 /*
     void custom_distribution_reptile_step(
-            net &try_learner,
+            NeuralNetwork &try_learner,
             errorAsClassificatorData data,
             int iter_cutoff,
             double treshold)
@@ -92,9 +92,9 @@ public:
         i = rand(0, data.size()-1);
 
         {
-            net local_try_learner = net(try_learner.copy());
-            net::parameters learning_param = cutoff_param(iter_cutoff, 0.01);
-            int num_iter = local_try_learner.train(&data[i], learning_param., &net::softPriorityTrain);
+            NeuralNetwork local_try_learner = NeuralNetwork(try_learner.copy());
+            NeuralNetwork::parameters learning_param = cutoff_param(iter_cutoff, 0.01);
+            int num_iter = local_try_learner.train(&data[i], learning_param., &NeuralNetwork::softPriorityTrain);
 
             double local_error = local_try_learner.get_error_of_data(&data[i]);
             local_try_learner.minus(try_learner);
@@ -105,7 +105,7 @@ public:
     }
     
     void custom_distribution_meta_learn(
-            net_and_score &global_best_solution,
+            NeuralNetworkAndScore &global_best_solution,
             errorAsClassificatorData custom_data,
             int k_iter_init,
             double treshold)
@@ -115,11 +115,11 @@ public:
 
         int global_stagnation = 0;
 
-        net_and_score at_walking_solution;
+        NeuralNetworkAndScore at_walking_solution;
 
-        net_and_score best_solution;
+        NeuralNetworkAndScore best_solution;
 
-        net_and_score SA_iter_best_solution = best_solution = at_walking_solution =
+        NeuralNetworkAndScore SA_iter_best_solution = best_solution = at_walking_solution =
                 evaluate_learner(global_best_solution, data, false, k_iter, treshold);
 
         for(int k_iter_loops = 0; global_stagnation < 4; k_iter--)
@@ -145,7 +145,7 @@ public:
                 if (iter % repeat_count == 0) {
 
                     k_iter_loops+=repeat_count;
-                    net_and_score new_score = at_walking_solution = evaluate_learner(at_walking_solution, data, true, k_iter, treshold);
+                    NeuralNetworkAndScore new_score = at_walking_solution = evaluate_learner(at_walking_solution, data, true, k_iter, treshold);
 
                     //cout << new_score << endl;
 
@@ -170,7 +170,7 @@ public:
                         count_stagnation++;
                         if(count_stagnation >= log2(data.size()))
                         {
-                            net next_step = step(at_walking_solution, 16*SA_iter_best_solution.max_error/(data[0].size()*data.size()));
+                            NeuralNetwork next_step = step(at_walking_solution, 16*SA_iter_best_solution.max_error/(data[0].size()*data.size()));
                             cout << "SA step" << endl;
                             new_score = SA_iter_best_solution = at_walking_solution = evaluate_learner(next_step, data, true, k_iter, treshold);
 
@@ -207,8 +207,8 @@ public:
 */
 
     /*void reptile_SA_train(
-            net_and_score &global_best_solution,
-            vector<datatype> data,
+            NeuralNetworkAndScore &global_best_solution,
+            vector<Datatype> data,
             int k_iter_init,
             double treshold)
     {
@@ -218,11 +218,11 @@ public:
 
         int global_stagnation = 0;
 
-        net_and_score at_walking_solution;
+        NeuralNetworkAndScore at_walking_solution;
 
-        net_and_score best_solution;
+        NeuralNetworkAndScore best_solution;
 
-        net_and_score SA_iter_best_solution = best_solution = at_walking_solution =
+        NeuralNetworkAndScore SA_iter_best_solution = best_solution = at_walking_solution =
                 evaluate_learner(global_best_solution, data, false, k_iter, treshold);
 
         for(int k_iter_loops = 0; global_stagnation < 4; k_iter--)
@@ -246,7 +246,7 @@ public:
                 if (iter % repeat_count == 0) {
 
                     k_iter_loops+=repeat_count;
-                    net_and_score new_score = at_walking_solution = evaluate_learner(at_walking_solution, data, true, k_iter, treshold);
+                    NeuralNetworkAndScore new_score = at_walking_solution = evaluate_learner(at_walking_solution, data, true, k_iter, treshold);
 
                     //cout << new_score << endl;
 
@@ -271,7 +271,7 @@ public:
                         count_stagnation++;
                         if(count_stagnation >= log2(data.size()))
                         {
-                            net next_step = step(at_walking_solution, 16*SA_iter_best_solution.max_error/(data[0].size()*data.size()));
+                            NeuralNetwork next_step = step(at_walking_solution, 16*SA_iter_best_solution.max_error/(data[0].size()*data.size()));
                             cout << "SA step" << endl;
                             new_score = SA_iter_best_solution = at_walking_solution = evaluate_learner(next_step, data, true, k_iter, treshold);
 
@@ -307,8 +307,8 @@ public:
     }*/
 
 
-    bool update_solutions(net_and_score &SA_iter_best_solution, net_and_score &best_solution,
-                          net_and_score &global_best_solution,
+    bool update_solutions(NeuralNetworkAndScore &SA_iter_best_solution, NeuralNetworkAndScore &best_solution,
+                          NeuralNetworkAndScore &global_best_solution,
                           int &global_stagnation, int &SA_stagnation)
     {
         if(SA_iter_best_solution < best_solution)
@@ -351,7 +351,7 @@ public:
         double init_temperature;
         double end_temperature;
 
-        net::PriorityTrainReport (net::*choosePriorityTrain)(Data*, net::parameters);
+        NeuralNetwork::PriorityTrainReport (NeuralNetwork::*choosePriorityTrain)(Data*, NeuralNetwork::parameters);
 
         int leaf_iter_init;
 
@@ -366,7 +366,7 @@ public:
 
         void at_initiation_of_parameters_may_21st_10_52_pm()
         {
-            choosePriorityTrain = &net::softPriorityTrain;
+            choosePriorityTrain = &NeuralNetwork::softPriorityTrain;
             give_up_after = 50;
 
             init_epsilon = 0.66;
@@ -405,7 +405,7 @@ public:
 
 
     void reptile_SA_train(
-            net_and_score &global_best_solution,
+            NeuralNetworkAndScore &global_best_solution,
             vector<datatype> f_data,
             learning_parameters init_param,
             bool print)
@@ -425,11 +425,11 @@ public:
 
         non_dominating_score_boundary boundary;
 
-        net_and_score at_walking_solution;
+        NeuralNetworkAndScore at_walking_solution;
 
-        net_and_score best_solution;
+        NeuralNetworkAndScore best_solution;
 
-        net_and_score SA_iter_best_solution = best_solution = at_walking_solution =
+        NeuralNetworkAndScore SA_iter_best_solution = best_solution = at_walking_solution =
                 evaluate_learner(global_best_solution, f_data, false,
                         k_iter,learning_param.treshold, learning_param.choosePriorityTrain);
 
@@ -584,12 +584,12 @@ public:
                             global_stagnation++;
 
 
-                            net next_step = step(SA_iter_best_solution,learning_param.step_radius_size);
+                            NeuralNetwork next_step = step(SA_iter_best_solution,learning_param.step_radius_size);
 
                             cout << "SA step" << endl;
 
 
-                            net_and_score try_step_solution = evaluate_learner(next_step, f_data, print, k_iter,learning_param.treshold,learning_param.choosePriorityTrain);
+                            NeuralNetworkAndScore try_step_solution = evaluate_learner(next_step, f_data, print, k_iter,learning_param.treshold,learning_param.choosePriorityTrain);
 
                             k_iter =learning_param.leaf_iter_init;
 
@@ -659,7 +659,7 @@ public:
     }
 
     void meta_learn(
-            net_and_score &global_best_solution,
+            NeuralNetworkAndScore &global_best_solution,
             vector<datatype> f_data,
             learning_parameters learning_param,
             bool print)
@@ -668,7 +668,7 @@ public:
     }
 
     bool explore_step(
-            net_and_score at_walking_solution, net_and_score try_solution, double temperature, bool print)
+            NeuralNetworkAndScore at_walking_solution, NeuralNetworkAndScore try_solution, double temperature, bool print)
     {
         assert(try_solution.sum_ordering_error >= at_walking_solution.sum_ordering_error);
 
@@ -688,8 +688,8 @@ public:
         return false;
     }
 
-    net_and_score order_neural_errors(
-            net_and_score global_best_solution,
+    NeuralNetworkAndScore order_neural_errors(
+            NeuralNetworkAndScore global_best_solution,
             vector<datatype> f_data,
             learning_parameters init_param,
             bool print)
@@ -706,7 +706,7 @@ public:
 
         boundary.set_max_boundary_size(learning_param.max_boundary_size);
 
-        net_and_score at_walking_solution =
+        NeuralNetworkAndScore at_walking_solution =
                 evaluate_learner(global_best_solution, f_data, false, eval_param,learning_param.choosePriorityTrain);
 
         local_policy.update(&at_walking_solution);
@@ -745,14 +745,14 @@ public:
 
             //at_walking_solution = boundary.query();
 
-            net_and_score try_solution = at_walking_solution;
+            NeuralNetworkAndScore try_solution = at_walking_solution;
 
             reptile_step_vary_epsilon(try_solution, f_data, k_iter, local_policy, epsilon,
                                      learning_param.choosePriorityTrain);
 
             //at_walking_solution.printWeights();
 
-            net_and_score try_score = evaluate_learner(try_solution, f_data, print, eval_param,
+            NeuralNetworkAndScore try_score = evaluate_learner(try_solution, f_data, print, eval_param,
                                                       learning_param.choosePriorityTrain);
 
             local_policy.update(&try_score);
@@ -799,7 +799,7 @@ public:
     }
 
     void order_tasks_by_difficulty_via_mutli_task_learning(
-            net_and_score &global_best_solution,
+            NeuralNetworkAndScore &global_best_solution,
             vector<datatype> f_data,
             bool print,
             int leaf_iter_init,
@@ -809,7 +809,7 @@ public:
     }
 
 
-    void update_net_and_score(net_and_score &gets, net_and_score sends)
+    void update_net_and_score(NeuralNetworkAndScore &gets, NeuralNetworkAndScore sends)
     {
         gets = sends;
     }
@@ -820,16 +820,16 @@ public:
         for(int i = 0; i<local_policy.observed_ordered.size();i++)
         {
             cout << fixed << setprecision(4)
-            << f_data[local_policy.observed_ordered[i].s].printConcatinateOutput()
-            <<"\t"<< f_data[local_policy.observed_ordered[i].s].score.print()
-            << "\t"<< local_policy.observed_ordered[i].f
+            << f_data[local_policy.observed_ordered[i].second].printConcatinateOutput()
+            <<"\t"<< f_data[local_policy.observed_ordered[i].second].score.print()
+            << "\t"<< local_policy.observed_ordered[i].first
             << "\t" << tarjans[i].print() << endl;
         }
         cout << "#swaps = " << local_policy.bubble_sort_count() << endl;
     }
 
     void print_stats(double epsilon, double temperature, int iter, int k_iter,
-            net_and_score at_walking_solution, net_and_score global_best_solution,
+            NeuralNetworkAndScore at_walking_solution, NeuralNetworkAndScore global_best_solution,
             non_dominating_score_boundary boundary,
             Policy local_policy, vector<datatype> f_data)
     {
@@ -865,9 +865,9 @@ public:
             int iter,
             int k_iter,
             int k_iter_loops,
-            net_and_score at_walking_solution,
-            net_and_score SA_iter_best_solution,
-            net_and_score best_solution,
+            NeuralNetworkAndScore at_walking_solution,
+            NeuralNetworkAndScore SA_iter_best_solution,
+            NeuralNetworkAndScore best_solution,
             non_dominating_score_boundary boundary,
             Policy local_policy,
             vector<datatype> f_data)
@@ -905,7 +905,7 @@ public:
 
 
     void reptile_train(
-            net &global_best_solution,
+            NeuralNetwork &global_best_solution,
             vector<Data> data,
             int root_iter_cutoff,
             evaluate_learner_parameters learning_param)
@@ -919,20 +919,20 @@ public:
 
 
     void reptile_step(
-            net &try_learner,
+            NeuralNetwork &try_learner,
             vector<datatype> data,
             int iter_cutoff,
             int i,
             double learning_rate,
             double epsilon,
-            net::PriorityTrainReport (net::*choosePriorityTrain)(Data*, net::parameters))
+            NeuralNetwork::PriorityTrainReport (NeuralNetwork::*choosePriorityTrain)(Data*, NeuralNetwork::parameters))
     {
 
-        net train_net = net(try_learner.copy());
-        net control_net = net(try_learner.copy());
+        NeuralNetwork train_net = NeuralNetwork(try_learner.copy());
+        NeuralNetwork control_net = NeuralNetwork(try_learner.copy());
 
-        net::parameters train_param;
-        net::parameters control_param;
+        NeuralNetwork::parameters train_param;
+        NeuralNetwork::parameters control_param;
 
         if(learning_rate < 0)
         {
@@ -945,13 +945,13 @@ public:
         }
 
 
-        net::PriorityTrainReport train_num_iter = train_net.train(&data[i], train_param, choosePriorityTrain);
+        NeuralNetwork::PriorityTrainReport train_num_iter = train_net.train(&data[i], train_param, choosePriorityTrain);
 
-        double train_error = train_net.get_error_of_data(&data[i]).s;
+        double train_error = train_net.get_error_of_data(&data[i]).second;
 
-        net::PriorityTrainReport control_num_iter = control_net.train(&data[i], control_param, choosePriorityTrain);
+        NeuralNetwork::PriorityTrainReport control_num_iter = control_net.train(&data[i], control_param, choosePriorityTrain);
 
-        double control_error = control_net.get_error_of_data(&data[i]).s;
+        double control_error = control_net.get_error_of_data(&data[i]).second;
 
 
         train_net.minus(try_learner);
@@ -960,41 +960,41 @@ public:
         try_learner.minus(train_net);
 
 
-        net new_learner = net(try_learner.copy());
+        NeuralNetwork new_learner = NeuralNetwork(try_learner.copy());
 
-        net::PriorityTrainReport new_num_iter = new_learner.train(&data[i], control_param, choosePriorityTrain);
+        NeuralNetwork::PriorityTrainReport new_num_iter = new_learner.train(&data[i], control_param, choosePriorityTrain);
 
-        double new_error = new_learner.get_error_of_data(&data[i]).s;
+        double new_error = new_learner.get_error_of_data(&data[i]).second;
 
         //cout << control_error << " -> " << new_error <<endl;
     }
 
 
     void reptile_step(
-            net &try_learner,
+            NeuralNetwork &try_learner,
             vector<datatype> data,
             int iter_cutoff,
             int i)
     {
         int learning_rate = 1;
-        reptile_step(try_learner, data, iter_cutoff, i, learning_rate, 0.33, &net::softPriorityTrain);
+        reptile_step(try_learner, data, iter_cutoff, i, learning_rate, 0.33, &NeuralNetwork::softPriorityTrain);
     }
 
 
     void reptile_step(
-            net &try_learner,
+            NeuralNetwork &try_learner,
             vector<datatype> data,
             int iter_cutoff,
             int i,
             double epsilon)
     {
         int learning_rate = 1;
-        reptile_step(try_learner, data, iter_cutoff, i, learning_rate, epsilon, &net::softPriorityTrain);
+        reptile_step(try_learner, data, iter_cutoff, i, learning_rate, epsilon, &NeuralNetwork::softPriorityTrain);
     }
 
 
     void reptile_step(
-            net &try_learner,
+            NeuralNetwork &try_learner,
             vector<datatype> data,
             int iter_cutoff)
     {
@@ -1003,33 +1003,33 @@ public:
     }
 
     void reptile_step_vary_epsilon(
-            net &try_learner,
+            NeuralNetwork &try_learner,
             vector<datatype> data,
             int iter_cutoff,
             Policy local_policy,
             double epsilon,
-            net::PriorityTrainReport (net::*choosePriorityTrain)(Data*, net::parameters))
+            NeuralNetwork::PriorityTrainReport (NeuralNetwork::*choosePriorityTrain)(Data*, NeuralNetwork::parameters))
     {
         //for(int i = 0;i<data.size();i++)
         pair<int, double> policy_decision = local_policy.query();
-        assert(policy_decision.s != 0);
-        //cout << policy_decision.f <<" "<< policy_decision.s <<endl;
-        reptile_step(try_learner, data, iter_cutoff, policy_decision.f, policy_decision.s, epsilon, choosePriorityTrain);
+        assert(policy_decision.second != 0);
+        //cout << policy_decision.f <<" "<< policy_decision.second <<endl;
+        reptile_step(try_learner, data, iter_cutoff, policy_decision.first, policy_decision.second, epsilon, choosePriorityTrain);
     }
 
     void reptile_step(
-            net &try_learner,
+            NeuralNetwork &try_learner,
             vector<datatype> data,
             int iter_cutoff,
             Policy local_policy)
     {
         //for(int i = 0;i<data.size();i++)
         pair<int, double> policy_decision = local_policy.query();
-        assert(policy_decision.s != 0);
-        reptile_step(try_learner, data, iter_cutoff, policy_decision.f, policy_decision.s, 0.33, &net::softPriorityTrain);
+        assert(policy_decision.second != 0);
+        reptile_step(try_learner, data, iter_cutoff, policy_decision.first, policy_decision.second, 0.33, &NeuralNetwork::softPriorityTrain);
     }
 
-    void evaluate_unit_task_print(DataAndScore* data, int local_iter, double local_error)
+    void evaluate_unit_task_print(DataAndDecisionTreeScore* data, int local_iter, double local_error)
     {
         cout << data->print() <<"\t"<< local_iter << "\t" << local_error << endl;
     }
@@ -1040,23 +1040,23 @@ public:
     }
 
 
-    net_and_score evaluate_unit_task(net try_learner, datatype* data, bool print, evaluate_learner_parameters learning_param,
-            net_and_score &score, net::PriorityTrainReport (net::*choosePriorityTrain)(Data*, net::parameters))
+    NeuralNetworkAndScore evaluate_unit_task(NeuralNetwork try_learner, datatype* data, bool print, evaluate_learner_parameters learning_param,
+            NeuralNetworkAndScore &score, NeuralNetwork::PriorityTrainReport (NeuralNetwork::*choosePriorityTrain)(Data*, NeuralNetwork::parameters))
     {
         //cout << i <<endl;
-        net local_try_learner = net(try_learner.copy());
-        net::parameters train_param = cutoff_param(learning_param.iter_cutoff, 0.01);
-        net::PriorityTrainReport tarjan = local_try_learner.train(data, train_param, choosePriorityTrain);
+        NeuralNetwork local_try_learner = NeuralNetwork(try_learner.copy());
+        NeuralNetwork::parameters train_param = cutoff_param(learning_param.iter_cutoff, 0.01);
+        NeuralNetwork::PriorityTrainReport tarjan = local_try_learner.train(data, train_param, choosePriorityTrain);
 
         /*
-        net exstended_try_learner = net(try_learner.copy());
-        net::parameters exstended_cuttoff_param = cutoff_param(learning_param.exstended_iter_cutoff, 0.01);
-        net::PriorityTrainReport exstended_tarjan = exstended_try_learner.train(data, exstended_cuttoff_param, choosePriorityTrain);
+        NeuralNetwork exstended_try_learner = NeuralNetwork(try_learner.copy());
+        NeuralNetwork::parameters exstended_cuttoff_param = cutoff_param(learning_param.exstended_iter_cutoff, 0.01);
+        NeuralNetwork::PriorityTrainReport exstended_tarjan = exstended_try_learner.train(data, exstended_cuttoff_param, choosePriorityTrain);
         */
 
         int local_iter = tarjan.total_iter;
         
-        net_and_score individual_score;
+        NeuralNetworkAndScore individual_score;
 
         individual_score.tarjan = tarjan;
 
@@ -1064,8 +1064,8 @@ public:
         score.is_init_score = false;
 
         pair<double, double> local_error = local_try_learner.get_error_of_data(data);
-        double sum_error_over_rows = local_error.f;
-        double max_error_over_rows = local_error.s;
+        double sum_error_over_rows = local_error.first;
+        double max_error_over_rows = local_error.second;
 
         score.max_error = max(score.max_error, max_error_over_rows);
         score.sum_of_max_errors += max_error_over_rows;
@@ -1076,7 +1076,7 @@ public:
         individual_score.max_error = max_error_over_rows;
         individual_score.sum_error = sum_error_over_rows;
 
-        if(local_iter == learning_param.iter_cutoff && local_error.s > learning_param.threshold)
+        if(local_iter == learning_param.iter_cutoff && local_error.second > learning_param.threshold)
         {
             score.num_train_fail++;
             individual_score.num_train_fail = 1;
@@ -1092,29 +1092,29 @@ public:
         if(print)
         {
             assert(0); // need to implement better local_iter print function in evaluate_unit_task_print
-            evaluate_unit_task_print(data, local_iter, local_error.s);
+            evaluate_unit_task_print(data, local_iter, local_error.second);
         }
 
         return individual_score;
     }
 
-    net_and_score evaluate_learner(
-            net try_learner,
+    NeuralNetworkAndScore evaluate_learner(
+            NeuralNetwork try_learner,
             vector<datatype> data,
             bool print,
             evaluate_learner_parameters learning_param,
-            net::PriorityTrainReport (net::*choosePriorityTrain)(Data*, net::parameters))
+            NeuralNetwork::PriorityTrainReport (NeuralNetwork::*choosePriorityTrain)(Data*, NeuralNetwork::parameters))
     {
 
-        vector<net_and_score> individual_scores;
+        vector<NeuralNetworkAndScore> individual_scores;
 
-        net_and_score score = try_learner;
+        NeuralNetworkAndScore score = try_learner;
 
         score.clear_vals();
 
         for(int i = 0;i<data.size();i++)
         {
-            individual_scores.pb
+            individual_scores.push_back
             (evaluate_unit_task(try_learner, &data[i], print, learning_param, score, choosePriorityTrain));
         }
 
@@ -1123,17 +1123,17 @@ public:
         return score;
     }
 
-    net_and_score evaluate_learner_softPriorityTrain(
-            net try_learner,
+    NeuralNetworkAndScore evaluate_learner_softPriorityTrain(
+            NeuralNetwork try_learner,
             vector<datatype> data,
             bool print,
             evaluate_learner_parameters learning_param)
     {
-        return evaluate_learner(try_learner, data, print, learning_param, &net::softPriorityTrain);
+        return evaluate_learner(try_learner, data, print, learning_param, &NeuralNetwork::softPriorityTrain);
     }
 
 
-    void meta_train(net_and_score learner, vector<datatype> data, double treshold)
+    void meta_train(NeuralNetworkAndScore learner, vector<datatype> data, double treshold)
     {
 
         int k_iter = 30;
@@ -1142,7 +1142,7 @@ public:
         evaluate_learner(learner, data, true, k_iter, treshold);
     }
 
-    /*net train_on_local_family()
+    /*NeuralNetwork train_on_local_family()
     {
         bool prev_print_close_local_data_model = print_close_local_data_model;
         print_close_local_data_model = false;
@@ -1153,7 +1153,7 @@ public:
             {
                 for(int k = 0;k<data_of_functions[i].size();k++)
                 {
-                    datatype new_in_F = data_of_functions[i];
+                    Datatype new_in_F = data_of_functions[i];
                     new_in_F.out[k][j].flip_value();
                     data_of_functions.push_back(new_in_F);
                 }
@@ -1164,18 +1164,18 @@ public:
 
         print_close_local_data_model = prev_print_close_local_data_model;
 
-        return net(learner);
+        return NeuralNetwork(learner);
     }*/
 
-    void train_old(net &the_learner, vector<datatype> data, double treshold)
+    void train_old(NeuralNetwork &the_learner, vector<datatype> data, double treshold)
     {
-        net_and_score init_score = the_learner;
+        NeuralNetworkAndScore init_score = the_learner;
         init_score.is_init_score = true;
         train_SA(init_score, data, 800, treshold);
         the_learner = init_score;
     }
 
-    bool pass(net_and_score prev_energy, net_and_score new_energy, double temperature, net_and_score best)
+    bool pass(NeuralNetworkAndScore prev_energy, NeuralNetworkAndScore new_energy, double temperature, NeuralNetworkAndScore best)
     {
         assert(prev_energy.has_value());
         if(!new_energy.has_value())//failed test
@@ -1200,12 +1200,12 @@ public:
         }
     }
 
-    void train_SA(net &best_soution, vector<datatype> data, int max_iter, double treshold)
+    void train_SA(NeuralNetwork &best_soution, vector<datatype> data, int max_iter, double treshold)
     {
 
         int num_SA_steps = 40;
-        net_and_score at = best_soution;
-        net_and_score prev_solution;
+        NeuralNetworkAndScore at = best_soution;
+        NeuralNetworkAndScore prev_solution;
         do
         {
             cout << "SA WITH ITER = " << num_SA_steps << endl;
@@ -1221,7 +1221,7 @@ public:
     }
 
     void simulated_annealing(
-                net_and_score &best_solution,
+                NeuralNetworkAndScore &best_solution,
                 vector<datatype> data,
                 int max_iter,
                 int num_SA_steps,
@@ -1233,7 +1233,7 @@ public:
         best_solution = evaluate_learner(best_solution, data, false, 1000, treshold);
 
         double at_diameter = init_diameter;
-        net_and_score at_walking_solution = best_solution;
+        NeuralNetworkAndScore at_walking_solution = best_solution;
 
         for(int iter = 1; iter < num_SA_steps; iter++)
         {
@@ -1241,12 +1241,12 @@ public:
 
             if(depth_left == 1)cout << "at_D = " << at_diameter <<endl;
 
-            net next_step = step(at_walking_solution, at_diameter);
+            NeuralNetwork next_step = step(at_walking_solution, at_diameter);
 
             //int old_iter_cutoff = at_walking_solution.max_train_iter*2+(!at_walking_solution.has_value())*treshold;
 
 
-            net_and_score next_step_evaluation =
+            NeuralNetworkAndScore next_step_evaluation =
                     evaluate_learner(next_step, data, false, max_iter, treshold);
 
             //cout << "consider = " << next_step_evaluation << endl;
@@ -1290,7 +1290,7 @@ public:
         }
     }
 
-    /*void expand_iterative_data(vector<datatype> &iterative_data, int batch_size)
+    /*void expand_iterative_data(vector<Datatype> &iterative_data, int batch_size)
     {
         for(int i = (int)iterative_data.size(), init_i = i; iterative_data.size()<init_i+batch_size && i < data_of_functions.size(); i++)
         {
@@ -1298,29 +1298,29 @@ public:
         }
     }*/
 
-    bool learner_treshold_test_on_iterative_sapce(net learner, vector<datatype> iterative_data, int max_cutoff, double treshold)
+    bool learner_treshold_test_on_iterative_sapce(NeuralNetwork learner, vector<datatype> iterative_data, int max_cutoff, double treshold)
     {
-        net_and_score num_iter = evaluate_learner(learner, iterative_data, false, max_cutoff, treshold);
+        NeuralNetworkAndScore num_iter = evaluate_learner(learner, iterative_data, false, max_cutoff, treshold);
         return num_iter.has_value();
     }
 
     /*void progressive_train()
     {
-        learner = net(n, n, 1);
+        learner = NeuralNetwork(n, n, 1);
         //learner.set_special_weights();
 
-        vector<datatype> iterative_data;
+        vector<Datatype> iterative_data;
 
         int threshold = 1;
         for(int i = 0, batch_size = 1; i<data_of_functions.size(); i += batch_size)
         {
             bool succeed = false;
-            vector<datatype> local_iterative_data;
+            vector<Datatype> local_iterative_data;
 
             while(!succeed)
             {
                 local_iterative_data.clear();
-                vector<net_and_score> individual_scores;
+                vector<NeuralNetworkAndScore> individual_scores;
                 evaluate_learner(learner, data_of_functions, false, threshold, individual_scores);
                 for(int i = 0;i<individual_scores.size();i++)
                 {
@@ -1354,14 +1354,14 @@ public:
     }
     */
 
-    int local_entropy_learner_evaluation(net try_learner, vector<datatype> data, bool print, int iter_cutoff, double treshold)
+    int local_entropy_learner_evaluation(NeuralNetwork try_learner, vector<datatype> data, bool print, int iter_cutoff, double treshold)
     {
         int c = 10;
         int rez = 0;
         bool fail = false;
         for(int i = 0; i<c; i++)
         {
-            net local_step_learner = step(try_learner, 0.05);
+            NeuralNetwork local_step_learner = step(try_learner, 0.05);
             int local_rez =  evaluate_learner(local_step_learner, data, false, 800, treshold);
             rez = max(rez, local_rez);
             if(local_rez == -1)

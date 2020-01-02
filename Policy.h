@@ -7,7 +7,8 @@
 
 #include "Header.h"
 #include "Data.h"
-#include "net_and_score.h"
+#include "NeuralNetworkAndScore.h"
+#include "DataAndDecisionTreeScore.h"
 
 class Policy
 {
@@ -25,7 +26,7 @@ public:
 
     bool print;
 
-    Policy(vector<DataAndScore> f_data)
+    Policy(vector<DataAndDecisionTreeScore> f_data)
     {
         print = false;
         policy_type = total_drift;
@@ -33,7 +34,7 @@ public:
         n = f_data.size();
         for(int i = 0;i<f_data.size();i++)
         {
-            desired.pb(f_data[i].score);
+            desired.push_back(f_data[i].score);
         }
     }
 
@@ -45,13 +46,13 @@ public:
         n = f_data.size();
     }
 
-    Policy(vector<DataAndScore> f_data, bool _print)
+    Policy(vector<DataAndDecisionTreeScore> f_data, bool _print)
     {
         print = _print;
         policy_type = controled_drift;
         for(int i = 0;i<f_data.size();i++)
         {
-            desired.pb(f_data[i].score);
+            desired.push_back(f_data[i].score);
         }
     }*/
 
@@ -86,7 +87,7 @@ public:
         vector<pair<DecisionTreeScore, int> > for_bubble_sort;
 
         for(int i = 0;i<observed_ordered.size();i++) {
-            for_bubble_sort.pb(mp(desired[observed_ordered[i].s], observed_ordered[i].s));
+            for_bubble_sort.push_back(make_pair(desired[observed_ordered[i].second], observed_ordered[i].second));
         }
 
         count_per_id = vector<int>(desired.size(), 0);
@@ -96,12 +97,12 @@ public:
         {
             for(int j = for_bubble_sort.size()-2;j>=i;j--)
             {
-                if(for_bubble_sort[j+1].f < for_bubble_sort[j].f)
+                if(for_bubble_sort[j+1].first < for_bubble_sort[j].first)
                 {
-                    assert(for_bubble_sort[j].s < count_per_id.size());
-                    assert(for_bubble_sort[j+1].s < count_per_id.size());
-                    count_per_id[for_bubble_sort[j].s]++;
-                    count_per_id[for_bubble_sort[j+1].s]--;
+                    assert(for_bubble_sort[j].second < count_per_id.size());
+                    assert(for_bubble_sort[j+1].second < count_per_id.size());
+                    count_per_id[for_bubble_sort[j].second]++;
+                    count_per_id[for_bubble_sort[j+1].second]--;
                     swap(for_bubble_sort[j], for_bubble_sort[j+1]);
                     count++;
                 }
@@ -111,7 +112,7 @@ public:
         return count;
     }
 
-    void set_up_orderings(net_and_score* generator)
+    void set_up_orderings(NeuralNetworkAndScore* generator)
     {
         observed = generator->individual_max_errors;
 
@@ -122,8 +123,8 @@ public:
         assert(desired.size() == observed.size());
 
         for (int i = 0; i < desired.size(); i++) {
-            desired_ordered.pb(mp(desired[i], i));
-            observed_ordered.pb(mp(observed[i], i));
+            desired_ordered.push_back(make_pair(desired[i], i));
+            observed_ordered.push_back(make_pair(observed[i], i));
         }
 
         sort_v(desired_ordered);
@@ -132,7 +133,7 @@ public:
         orderings_set_up = true;
     }
 
-    int get_swap_count(net_and_score* generator)
+    int get_swap_count(NeuralNetworkAndScore* generator)
     {
         set_up_orderings(generator);
         return bubble_sort_count();
@@ -145,10 +146,10 @@ public:
         weighed_id_to_increase_error.clear();
         correct_ids.clear();
 
-        most_distant = mp(-1, mp(-1, 0));
+        most_distant = make_pair(-1, make_pair(-1, 0));
 
-        most_distance_to_increase = mp(-1, mp(-1, 0));
-        most_distance_to_reduce = mp(-1, mp(-1, 0));
+        most_distance_to_increase = make_pair(-1, make_pair(-1, 0));
+        most_distance_to_reduce = make_pair(-1, make_pair(-1, 0));
 
         int num_correct = 0;
 
@@ -156,19 +157,19 @@ public:
         {
             if(count_per_id[i] > 0)
             {
-                most_distant = max(most_distant, mp(count_per_id[i], mp(i, -1.0)));
-                most_distance_to_increase = max(most_distance_to_increase, mp(count_per_id[i], mp(i, -1.0)));
+                most_distant = max(most_distant, make_pair(count_per_id[i], make_pair(i, -1.0)));
+                most_distance_to_increase = max(most_distance_to_increase, make_pair(count_per_id[i], make_pair(i, -1.0)));
                 for (int j = 0; j < count_per_id[i]*count_per_id[i]; j++) {
-                    weighed_id_to_increase_error.pb(i);
+                    weighed_id_to_increase_error.push_back(i);
                 }
             }
             else if(count_per_id[i] < 0)
             {
-                most_distant = max(most_distant, mp(-count_per_id[i], mp(i, +1.0)));
-                most_distance_to_reduce = max(most_distance_to_reduce, mp(-count_per_id[i], mp(i, +1.0)));
+                most_distant = max(most_distant, make_pair(-count_per_id[i], make_pair(i, +1.0)));
+                most_distance_to_reduce = max(most_distance_to_reduce, make_pair(-count_per_id[i], make_pair(i, +1.0)));
                 for (int j = 0; j < -count_per_id[i]*(-count_per_id[i]); j++)
                 {
-                    weighed_id_to_reduce_error.pb(i);
+                    weighed_id_to_reduce_error.push_back(i);
                 }
             }
             else
@@ -177,21 +178,21 @@ public:
             }
             if(-2 <= count_per_id[i] && count_per_id[i] <= 0)
             {
-                correct_ids.pb(i);
+                correct_ids.push_back(i);
             }
         }
 
-        assert(num_correct == count_per_id.size() || most_distant.s.s != 0);
+        assert(num_correct == count_per_id.size() || most_distant.second.second != 0);
 
-        if(most_distant.f == -1)
+        if(most_distant.first == -1)
         {
-            most_distant.f = 0;
+            most_distant.first = 0;
         }
 
         return most_distant;
     }
 
-    void update(net_and_score* generator)
+    void update(NeuralNetworkAndScore* generator)
     {
         if(policy_type == total_drift)
         {
@@ -207,7 +208,7 @@ public:
 
             assert(get_most_distant() == most_distant);
 
-            generator->max_unit_ordering_error = most_distant.f;
+            generator->max_unit_ordering_error = most_distant.first;
             generator->sum_ordering_error = count;
         }
         else if(policy_type == controled_drift)
@@ -224,21 +225,21 @@ public:
             bool mismatch = false;
 
             assert(desired_ordered.size() >= 1);
-            DecisionTreeScore threshold_to_train_under = desired_ordered[0].f;
+            DecisionTreeScore threshold_to_train_under = desired_ordered[0].first;
 
             if(print)cout << "opt:: ";
             for (int i = 0; i < desired_ordered.size(); i++) {
-                if(print)cout << desired_ordered[i].f.print(desired_ordered[i].s) <<" " ;
+                if(print)cout << desired_ordered[i].first.print(desired_ordered[i].second) <<" " ;
                 if (!mismatch) {
-                    if (desired_ordered[i].f < desired[observed_ordered[i].s]) {
+                    if (desired_ordered[i].first < desired[observed_ordered[i].second]) {
                         mismatch = true;
-                        threshold_to_train_under = desired[observed_ordered[i].s];
+                        threshold_to_train_under = desired[observed_ordered[i].second];
                     } else {
-                        //id_to_reduce_error.pb(observed_ordered[i].s);
+                        //id_to_reduce_error.push_back(observed_ordered[i].second);
                     }
                 } else {
-                    if (desired[observed_ordered[i].s] < threshold_to_train_under) {
-                        id_to_reduce_error.pb(observed_ordered[i].s);
+                    if (desired[observed_ordered[i].second] < threshold_to_train_under) {
+                        id_to_reduce_error.push_back(observed_ordered[i].second);
                     }
                 }
             }
@@ -248,26 +249,26 @@ public:
                 cout << endl;
                 cout << "obs:: ";
                 for(int i = 0;i<observed_ordered.size();i++) {
-                    cout << desired[observed_ordered[i].s].print(observed_ordered[i].s) << " ";
+                    cout << desired[observed_ordered[i].second].print(observed_ordered[i].second) << " ";
                 }
                 cout << endl;
             }
 
             mismatch = false;
 
-            DecisionTreeScore threshold_to_anti_train_over = desired_ordered[desired_ordered.size()-1].f;
+            DecisionTreeScore threshold_to_anti_train_over = desired_ordered[desired_ordered.size()-1].first;
 
             for (int i = desired_ordered.size()-1; i >=0; i--) {
                 if (!mismatch) {
-                    if (desired[observed_ordered[i].s] < desired_ordered[i].f) {
+                    if (desired[observed_ordered[i].second] < desired_ordered[i].first) {
                         mismatch = true;
-                        threshold_to_anti_train_over = desired[observed_ordered[i].s];
+                        threshold_to_anti_train_over = desired[observed_ordered[i].second];
                     } else {
-                        //id_to_reduce_error.pb(observed_ordered[i].s);
+                        //id_to_reduce_error.push_back(observed_ordered[i].second);
                     }
                 } else {
-                    if (threshold_to_anti_train_over < desired[observed_ordered[i].s]) {
-                        id_to_increase_error.pb(observed_ordered[i].s);
+                    if (threshold_to_anti_train_over < desired[observed_ordered[i].second]) {
+                        id_to_increase_error.push_back(observed_ordered[i].second);
                     }
                 }
             }
@@ -276,7 +277,7 @@ public:
 
             assert(get_most_distant() == most_distant);
 
-            generator->max_unit_ordering_error = most_distant.f;
+            generator->max_unit_ordering_error = most_distant.first;
             generator->sum_ordering_error = count;
 
             if(print)
@@ -332,18 +333,18 @@ public:
             cout << "[+1" << ", " << desired[id].print(id) << "] ";
         }
 
-        return mp(id, 1);
+        return make_pair(id, 1);
 
 
-        if(policy_type == total_drift || most_distant.f == -1 || most_distant.f == 0 || rand(0, 100) < 40)
+        if(policy_type == total_drift || most_distant.first == -1 || most_distant.first == 0 || rand(0, 100) < 40)
             //|| weighed_id_to_reduce_error.size() == 0)
         {
             //if(most_distance_to_reduce.f != -1 )
             //{
-            //    return mp(most_distance_to_reduce.s.f, most_distance_to_reduce.s.s);
+            //    return make_pair(most_distance_to_reduce.second.f, most_distance_to_reduce.second.second);
             //}
-            //return mp(highest_error.s, 1);
-            //return mp(rand(0, desired.size()-1), 1);
+            //return make_pair(highest_error.second, 1);
+            //return make_pair(rand(0, desired.size()-1), 1);
 
             if(correct_ids.size() >= 1) {
                 int id = correct_ids[rand(0, correct_ids.size() - 1)];
@@ -353,7 +354,7 @@ public:
                     cout << "[+1" << ", " << desired[id].print(id) << "] ";
 
                 }
-                return mp(id, 1);
+                return make_pair(id, 1);
             }
             else
             {
@@ -363,33 +364,33 @@ public:
                     cout << "correct_drift heuristic" << endl;
                     cout << "[+1" << ", " << desired[id].print(id) << "] ";
                 }
-                return mp(id, 1);
+                return make_pair(id, 1);
             }
         }
         else if(policy_type == controled_drift)
         {
 
-            if(most_distance_to_reduce.s.s != 0 && most_distance_to_reduce.f != -1 && rand(0, 100) < 75)
+            if(most_distance_to_reduce.second.second != 0 && most_distance_to_reduce.first != -1 && rand(0, 100) < 75)
             {
 
                 if (print) {
                     cout << "most_distant_to_reduce heuristic" << endl;
-                    cout << "[" << most_distance_to_reduce.s.f << ", "
-                         << desired[most_distance_to_reduce.s.f].print(most_distance_to_reduce.s.f) << "] ";
+                    cout << "[" << most_distance_to_reduce.second.first << ", "
+                         << desired[most_distance_to_reduce.second.first].print(most_distance_to_reduce.second.first) << "] ";
                 }
 
-                return mp(most_distance_to_reduce.s.f, most_distance_to_reduce.s.s);
+                return make_pair(most_distance_to_reduce.second.first, most_distance_to_reduce.second.second);
 
             }
-            else if(most_distant.s.s != 0) {
+            else if(most_distant.second.second != 0) {
 
-                assert(most_distant.s.f != -1);
+                assert(most_distant.second.first != -1);
                 if (print) {
                     cout << "most_distant heuristic" << endl;
-                    cout << "[" << most_distant.s.s << ", " << desired[most_distant.s.f].print(most_distant.s.f)
+                    cout << "[" << most_distant.second.second << ", " << desired[most_distant.second.first].print(most_distant.second.first)
                          << "] ";
                 }
-                return mp(most_distant.s.f, most_distant.s.s);
+                return make_pair(most_distant.second.first, most_distant.second.second);
 
             }
             else
@@ -401,7 +402,7 @@ public:
                     cout << "[+1" << ", " << desired[id].print(id) << "] ";
                 }
 
-                return mp(id, 1);
+                return make_pair(id, 1);
 
             }
             /* WEIGHED
@@ -416,14 +417,14 @@ public:
 
                     int sample = rand(0, weighed_id_to_reduce_error.size() - 1);
                     cout << "[+1," << desired[weighed_id_to_reduce_error[sample]].print(weighed_id_to_reduce_error[sample]) << "] ";
-                    return mp(weighed_id_to_reduce_error[sample], 1);
+                    return make_pair(weighed_id_to_reduce_error[sample], 1);
                 }
                 else
                 {
 
                     int sample = rand(0, weighed_id_to_increase_error.size() - 1);
                     cout << "[-1," << desired[weighed_id_to_increase_error[sample]].print(weighed_id_to_increase_error[sample]) << "] ";
-                    return mp(weighed_id_to_increase_error[sample], -1);
+                    return make_pair(weighed_id_to_increase_error[sample], -1);
                 }
             }
             else
@@ -442,21 +443,21 @@ public:
 
                     int sample = rand(0, id_to_reduce_error.size() - 1);
                     cout << "[+1," << desired[id_to_reduce_error[sample]].print(id_to_reduce_error[sample]) << "] ";
-                    return mp(id_to_reduce_error[sample], 1);
+                    return make_pair(id_to_reduce_error[sample], 1);
                 }
                 else
                 {
 
                     int sample = rand(0, id_to_increase_error.size() - 1);
                     cout << "[-1," << desired[id_to_increase_error[sample]].print(id_to_increase_error[sample]) << "] ";
-                    return mp(id_to_increase_error[sample], -1);
+                    return make_pair(id_to_increase_error[sample], -1);
                 }
 
             }
             else
             {
                 assert(id_to_increase_error.size() == 0);
-                return mp(rand(0, desired.size()-1), 1);
+                return make_pair(rand(0, desired.size()-1), 1);
             }*/
         }
         else
@@ -468,7 +469,7 @@ public:
                 cout << "correct_drift heuristic" << endl;
                 cout << "[+1" << ", " << desired[id].print(id) << "] ";
             }
-            return mp(id, 1);
+            return make_pair(id, 1);
 
         }
     }

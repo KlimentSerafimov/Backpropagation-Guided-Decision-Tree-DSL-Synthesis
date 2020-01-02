@@ -1,4 +1,4 @@
-    class solution_score_old: public net
+    class solution_score_old: public NeuralNetwork
     {
     public:
 
@@ -13,7 +13,7 @@
 
         solution_score_old(){}
 
-        solution_score_old(net self): net(self)
+        solution_score_old(NeuralNetwork self): NeuralNetwork(self)
         {
 
         }

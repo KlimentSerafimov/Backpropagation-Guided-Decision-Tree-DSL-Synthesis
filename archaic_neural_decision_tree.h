@@ -13,7 +13,7 @@ class archaic_neural_decision_tree
 public:
 
     Data the_Data;
-    net the_teacher;
+    NeuralNetwork the_teacher;
 
     vector<pair<bit_signature, int> > gate;
 
@@ -32,7 +32,10 @@ public:
     }
 
 
-    int init_root(int _n, net::parameters param, net::PriorityTrainReport (net::*training_f)(Data*, net::parameters param))
+    int init_root(
+            int _n,
+            NeuralNetwork::parameters param,
+            NeuralNetwork::PriorityTrainReport (NeuralNetwork::*training_f)(Data*, NeuralNetwork::parameters param))
     {
         //string type = "input_is_output";
         //string type = "longest_substring_double_to_middle";
@@ -51,8 +54,8 @@ public:
 
     int simple_build_tree
     (
-            net::parameters param,
-            net::PriorityTrainReport (net::*training_f)(Data*, net::parameters)
+            NeuralNetwork::parameters param,
+            NeuralNetwork::PriorityTrainReport (NeuralNetwork::*training_f)(Data*, NeuralNetwork::parameters)
     )
     {
         int inputSize = the_Data.numInputs;
@@ -64,7 +67,7 @@ public:
                         -1
                 };
 
-        the_teacher = net(inputSize, hiddenLayers, outputSize);
+        the_teacher = NeuralNetwork(inputSize, hiddenLayers, outputSize);
 
         //param.set_iteration_count(the_Data.size());
 
@@ -144,7 +147,7 @@ public:
     }
 
 
-    int build_tree(net::parameters param, net::PriorityTrainReport (net::*training_f)(Data*, net::parameters))
+    int build_tree(NeuralNetwork::parameters param, NeuralNetwork::PriorityTrainReport (NeuralNetwork::*training_f)(Data*, NeuralNetwork::parameters))
     {
 
         int improved = 0;
@@ -168,10 +171,10 @@ public:
                 {
 
                     Data local_local_data = local_data;
-                    net first_teacher = net(local_local_data.numInputs, local_local_data.numOutputs);
+                    NeuralNetwork first_teacher = NeuralNetwork(local_local_data.numInputs, local_local_data.numOutputs);
                     first_teacher.train(&local_local_data, param, training_f);
 
-                    typedef net::data_model::bit_dimension_pair bit_dimension_pair;
+                    typedef NeuralNetwork::data_model::bit_dimension_pair bit_dimension_pair;
                     vector<bit_dimension_pair> sorted_pairs = first_teacher.the_model.sort_bit_dimension_pairs(&local_data); //first_teacher.the_model.sort_functional_dimension_pairs();//
 
                     int at = 0;
@@ -204,7 +207,7 @@ public:
                                 data_with_best_pair = second_data_with_best_pair;
                             }
 
-                            net new_teacher = net(data_with_best_pair.numInputs, data_with_best_pair.numOutputs);
+                            NeuralNetwork new_teacher = NeuralNetwork(data_with_best_pair.numInputs, data_with_best_pair.numOutputs);
                             new_teacher.train(&data_with_best_pair, param, training_f);
 
                             int now_the_bit = new_teacher.the_model.get_worst_dimension();
@@ -248,7 +251,7 @@ public:
                     {
                         cout << "classic" <<endl;
                     }
-                    net first_teacher = net(local_data.numInputs, local_data.numOutputs);
+                    NeuralNetwork first_teacher = NeuralNetwork(local_data.numInputs, local_data.numOutputs);
                     first_teacher.train(&local_data, param, training_f);
                     vector<bit_signature> bits_wanted = first_teacher.the_model.dimension_error_ratio_score;
 
@@ -267,7 +270,7 @@ public:
                     local_data.and_or_exstention(data_with_all_kernels, bits_wanted, width);
                     local_data = data_with_all_kernels;
 
-                    the_bit = ensamble_teacher(&local_data, param.ensamble_size + 0*(local_data.numInputs/2+1), param, training_f).f;
+                    the_bit = ensamble_teacher(&local_data, param.ensamble_size + 0*(local_data.numInputs/2+1), param, training_f).first;
 
 
                     Data data_with_single_kernel;
@@ -284,7 +287,7 @@ public:
                 {
                     /*Data left_kernel, right_kernel;
                     gate.clear();
-                    gate.push_back(mp(the_bit, 1));
+                    gate.push_back(make_pair(the_bit, 1));
                     local_data.split(gate, left_kernel, right_kernel);
 
 
@@ -330,7 +333,7 @@ public:
 
             Data left_kernel, right_kernel;
             gate.clear();
-            gate.push_back(mp(best_bit, 1));
+            gate.push_back(make_pair(best_bit, 1));
             best_data.split(gate, left_kernel, right_kernel);
 
             new_left = new archaic_neural_decision_tree();
@@ -392,12 +395,12 @@ public:
         }
         //damaged[rand_layer][rand_neuron] = true;
         //switch it off
-        the_teacher.layers[rand_layer].neurons[rand_neuron].disregard[rand_disregard] = true;cout << "remove neuron in layer = " << rand_layer <<", neuron id ="<< rand_neuron <<" synapse id = "<< rand_disregard <<endl;
+        the_teacher.layers[rand_layer].neurons[rand_neuron].disregard[rand_disregard] = true;cout << "remove Neuron in Layer = " << rand_layer <<", Neuron id ="<< rand_neuron <<" synapse id = "<< rand_disregard <<endl;
 
     }
 
     int disable_synapses
-    (int max_inter, net::parameters param, net &the_teacher, Data &the_Data, net::PriorityTrainReport (net::*training_f)(Data*, net::parameters param))
+    (int max_inter, NeuralNetwork::parameters param, NeuralNetwork &the_teacher, Data &the_Data, NeuralNetwork::PriorityTrainReport (NeuralNetwork::*training_f)(Data*, NeuralNetwork::parameters param))
     {
         vector<vector<bool> > damaged(the_teacher.size(), vector<bool>(max_inter, false));
 
@@ -426,15 +429,15 @@ public:
         {
             if(j<gate.size())
             {
-                if(gate[j].f.vector_id == i)
+                if(gate[j].first.vector_id == i)
                 {
-                    if(gate[j].s == -1)
+                    if(gate[j].second == -1)
                     {
                         cout << "-";
                     }
                     else
                     {
-                        assert(gate[j].s == 1);
+                        assert(gate[j].second == 1);
                         cout << "+";
                     }
                     j++;
@@ -451,7 +454,7 @@ public:
         }
         if(gate.size() == 1)
         {
-            bit_signature the_bit = gate[0].f;
+            bit_signature the_bit = gate[0].first;
             cout << " gate id: " << the_bit.vector_id;
             if(the_bit.num_operators == 2)
             {
@@ -514,7 +517,7 @@ public:
 
 
     //int local_single_build(int _n, double min_rate, double max_rate , int parameter)
-    net::PriorityTrainReport local_single_build(int _n, net::parameters param)
+    NeuralNetwork::PriorityTrainReport local_single_build(int _n, NeuralNetwork::parameters param)
     {
         //string type = "input_is_output";
         string type = "longestSubstring_ai_is_1";
@@ -535,11 +538,11 @@ public:
                         -1
                 };
 
-        the_teacher = net(inputSize, hiddenLayers, outputSize);
-        return the_teacher.train(&the_Data, param, &net::softPriorityTrain);
+        the_teacher = NeuralNetwork(inputSize, hiddenLayers, outputSize);
+        return the_teacher.train(&the_Data, param, &NeuralNetwork::softPriorityTrain);
         //assert(min_rate == max_rate);
-        //return the_teacher.train(&the_Data, max_rate, &net::fullBatchTrain);
-        //the_teacher.train(&the_Data, _rate, &net::hardPriorityTrain);
+        //return the_teacher.train(&the_Data, max_rate, &NeuralNetwork::fullBatchTrain);
+        //the_teacher.train(&the_Data, _rate, &NeuralNetwork::hardPriorityTrain);
         //the_teacher.test(&the_Data, "print result");
         //the_teacher.analyzeMistakes(&the_Data);
     }

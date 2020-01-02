@@ -167,7 +167,7 @@ public:
     origin(string _code, int _operand)
     {
         init(_code);
-        operands.pb(_operand);
+        operands.push_back(_operand);
         end_init();
     }
     origin(string _code, vector<int> _operands)
@@ -181,7 +181,7 @@ public:
     {
         init(_code_local_id);
         operand = _operand;
-        operands.pb(operand);
+        operands.push_back(operand);
         end_init();
     }
 
@@ -442,7 +442,7 @@ public:
     }
     void addInputEdge(int new_edge_id)
     {
-        edges_in.pb(new_edge_id);
+        edges_in.push_back(new_edge_id);
         compute.addEdge();
         assert(compute.num_inputs == edges_in.size());
     }
@@ -483,7 +483,7 @@ public:
     vector<int> inputNodes;
     vector<int> outputNodes;
 
-    vector<vector<int> > net;
+    vector<vector<int> > NeuralNetwork;
 
     vector<int> v_init_net;
 
@@ -496,7 +496,7 @@ public:
     }
     int return_and_increment(int &number)
     {
-        net.pb(v_init_net);
+        NeuralNetwork.push_back(v_init_net);
         int ret = number;
         number++;
         return ret;
@@ -504,7 +504,7 @@ public:
 
     int initNode(computation compute, origin lineage)
     {
-        nodes.pb(node(n, compute, lineage));
+        nodes.push_back(node(n, compute, lineage));
         return return_and_increment(n);
     }
 
@@ -516,7 +516,7 @@ public:
         string ret;
         ret+=parts.f;
         if(parts.f!=""&&parts.s!="")ret+="<=";
-        ret+=parts.s;
+        ret+=parts.second;
         printlineage = tmp;
         return ret;
     }
@@ -558,7 +558,7 @@ public:
                         }
                         lineage+=tmp.f;
                         if(tmp.f!=""&&tmp.s!="")lineage+="<=";
-                        lineage+=tmp.s;
+                        lineage+=tmp.second;
                     }
                     lineage+="]";
                 }
@@ -589,11 +589,11 @@ public:
                     pair<string, string> tmp = generatecode(prev_node_id, printlineage);
                     components += tmp.f;
                     if(tmp.f!=""&&tmp.s!="")components+="<=";
-                    components+=tmp.s;
+                    components+=tmp.second;
                     if(nodes[prev_node_id].lineage.operands.size()>0&&nodes[prev_node_id].lineage.has_local_id)
                     {
-                        labels.pb(mp(nodes[prev_node_id].lineage.is_specification_node||nodes[prev_node_id].lineage.is_specific_not_node,
-                                     mp(nodes[prev_node_id].lineage.local_id+1*(!nodes[prev_node_id].compute.is_equals_node),
+                        labels.push_back(make_pair(nodes[prev_node_id].lineage.is_specification_node||nodes[prev_node_id].lineage.is_specific_not_node,
+                                     make_pair(nodes[prev_node_id].lineage.local_id+1*(!nodes[prev_node_id].compute.is_equals_node),
                                         nodes[nodes[prev_node_id].lineage.operand].lineage.local_id)));
                     }
                 }
@@ -608,8 +608,8 @@ public:
                     }
                     for(int i=0;i<labels.size();i++)
                     {
-                        tmp.pb(labels[i].s.f);
-                        components[labels[i].s.s] = (labels[i].s.f+'0');
+                        tmp.push_back(labels[i].second.f);
+                        components[labels[i].second.second] = (labels[i].second.f+'0');
                     }
                     computation += "<"+components+">";
                 }
@@ -621,29 +621,29 @@ public:
                 nodes[node_id].compute.is_code_generated = true;
             }
         }
-        return mp(lineage, computation);
+        return make_pair(lineage, computation);
     }
     void init(int numInputs, int numOutputs)
     {
         assert(numInputs>0&&numOutputs>0);
         for(int i=0;i<numInputs;i++)
         {
-            inputNodes.pb(initNode(computation("read"), origin(mp("in_bit", i))));
+            inputNodes.push_back(initNode(computation("read"), origin(make_pair("in_bit", i))));
         }
         for(int i=0;i<numOutputs;i++)
         {
             string code = toDecimalString(i);
-            outputNodes.pb(initNode(computation("or"), origin(mp("out_bit", i))));
+            outputNodes.push_back(initNode(computation("or"), origin(make_pair("out_bit", i))));
         }
     }
     int addEdge(int from, int to)
     {
         assertNode(from);
         assertNode(to);
-        net[from].pb(edges.size());
+        NeuralNetwork[from].push_back(edges.size());
         nodes[to].addInputEdge(edges.size());
         int ret_edge_id = edges.size();
-        edges.pb(edge(from, to));
+        edges.push_back(edge(from, to));
         return ret_edge_id;
     }
     void remove_edge(int edge_id)
@@ -652,7 +652,7 @@ public:
         int node_id_to = edges[edge_id].to;
         printNodes = true;
         printlineage = true;
-        net[node_id_from].erase(remove(net[node_id_from].begin(), net[node_id_from].end(), edge_id), net[node_id_from].end());
+        NeuralNetwork[node_id_from].erase(remove(NeuralNetwork[node_id_from].begin(), NeuralNetwork[node_id_from].end(), edge_id), NeuralNetwork[node_id_from].end());
         nodes[node_id_to].removeEdge(edge_id);
     }
     void addEdges_out(int node_id, vector<int> to)
@@ -683,30 +683,30 @@ public:
         {
             assert(input_values[i]==0||input_values[i]==1);
             bool exists = false;
-            for(int j=0;j<net[inputNodes[i]].size();j++)
+            for(int j=0;j<NeuralNetwork[inputNodes[i]].size();j++)
             {
-                int case_node = edges[net[inputNodes[i]][j]].to;
+                int case_node = edges[NeuralNetwork[inputNodes[i]][j]].to;
                 if(nodes[case_node].compute.is_equals_node&&nodes[case_node].compute.judge == input_values[i])
                 {
                     assert(!exists);
-                    from_node_ids.pb(case_node);
+                    from_node_ids.push_back(case_node);
                     exists = true;
                 }
                 else if(nodes[case_node].compute.is_different_node&&nodes[case_node].compute.judge != input_values[i])
                 {
                     assert(!exists);
-                    from_node_ids.pb(case_node);
+                    from_node_ids.push_back(case_node);
                     exists = true;
                 }
             }
             if(!exists)
             {
-                int new_case_node = initNode(computation("==", input_values[i]), origin(mp("is", input_values[i]), inputNodes[i]));
+                int new_case_node = initNode(computation("==", input_values[i]), origin(make_pair("is", input_values[i]), inputNodes[i]));
                 addEdge(inputNodes[i], new_case_node);
-                int new_not_case_node = initNode(computation("!=", input_values[i]), origin(mp("!is", input_values[i]), inputNodes[i]));
+                int new_not_case_node = initNode(computation("!=", input_values[i]), origin(make_pair("!is", input_values[i]), inputNodes[i]));
                 addEdge(inputNodes[i], new_not_case_node);
                 set_nots(new_case_node, new_not_case_node);
-                from_node_ids.pb(new_case_node);
+                from_node_ids.push_back(new_case_node);
             }
         }
 
@@ -719,7 +719,7 @@ public:
             assert(output_values[i]==0||output_values[i]==1);
             if(output_values[i]==1)
             {
-                to_node_ids.pb(outputNodes[i]);
+                to_node_ids.push_back(outputNodes[i]);
             }
         }
         int hardcode_then_node_id = find_node_given_to(to_node_ids);
@@ -744,7 +744,7 @@ public:
         int ret = -1;
         for( map<int, int>::iterator it = candidate_ids.begin();it!=candidate_ids.end();it++)
         {
-            if((*it).s==to.size()&&net[(*it).f].size()==to.size())
+            if((*it).s==to.size()&&NeuralNetwork[(*it).f].size()==to.size())
             {
                 assert(ret == -1);
                 ret = (*it).f;
@@ -757,9 +757,9 @@ public:
         map<int, int> candidate_ids;
         for(int i=0;i<from.size();i++)
         {
-            for(int j=0;j<net[from[i]].size();j++)
+            for(int j=0;j<NeuralNetwork[from[i]].size();j++)
             {
-                int candidate_id = edges[net[from[i]][j]].to;
+                int candidate_id = edges[NeuralNetwork[from[i]][j]].to;
                 if(nodes[candidate_id].compute.is_same_operation(compute))
                     candidate_ids[candidate_id]++;
             }
@@ -794,10 +794,10 @@ public:
             int node_id_from = edges[edge_id].from;
             int node_id_to = edges[edge_id].to;
 
-            net[node_id_from].erase(remove(net[node_id_from].begin(), net[node_id_from].end(), edge_id), net[node_id_from].end());
+            NeuralNetwork[node_id_from].erase(remove(NeuralNetwork[node_id_from].begin(), NeuralNetwork[node_id_from].end(), edge_id), NeuralNetwork[node_id_from].end());
 
             edges[edge_id].from = newFrom;
-            net[newFrom].pb(edge_id);
+            NeuralNetwork[newFrom].push_back(edge_id);
         }
         if(edges[edge_id].to != newTo)
         {
@@ -806,7 +806,7 @@ public:
             int node_id_to = edges[edge_id].to;
             nodes[node_id_to].edges_in.erase(remove(nodes[node_id_to].edges_in.begin(), nodes[node_id_to].edges_in.end(), edge_id), nodes[node_id_to].edges_in.end());
             edges[edge_id].to = newTo;
-            nodes[newTo].edges_in.pb(edge_id);
+            nodes[newTo].edges_in.push_back(edge_id);
         }
     }
 
@@ -837,7 +837,7 @@ public:
                 add_not(prev_node_id);
             }
             assert(nodes[prev_node_id].not_id != -1);
-            from_not_ids.pb(nodes[prev_node_id].not_id);
+            from_not_ids.push_back(nodes[prev_node_id].not_id);
         }
         int not_node_id = find_node_from(from_not_ids, nodes[node_id].compute.inverse_operation());
         if(not_node_id == -1)
@@ -869,15 +869,15 @@ public:
                     int prev_prev_node_id = edges[nodes[prev_node_id].edges_in[j]].from;
                     if(!nodes[prev_prev_node_id].lineage.is_input_node)
                     {
-                        prev_prev_nodes_ids.pb(prev_prev_node_id);
+                        prev_prev_nodes_ids.push_back(prev_prev_node_id);
                     }
                 }
                 if(prev_prev_nodes_ids.size()>=1)
                 {
                     sort_v(prev_prev_nodes_ids);
-                    find_overlap_from_ids.pb(prev_prev_nodes_ids);
-                    prev_nodes_ids.pb(prev_node_id);
-                    possibly_removable_edges_ids.pb(edge_id);
+                    find_overlap_from_ids.push_back(prev_prev_nodes_ids);
+                    prev_nodes_ids.push_back(prev_node_id);
+                    possibly_removable_edges_ids.push_back(edge_id);
                 }
             }
         }
@@ -900,21 +900,21 @@ public:
                     count_c++;
                     if(l==find_overlap_from_ids[j].size())
                     {
-                        not_common.pb(find_overlap_from_ids[i][k]);
-                        not_common_parts.f.pb(find_overlap_from_ids[i][k]);
+                        not_common.push_back(find_overlap_from_ids[i][k]);
+                        not_common_parts.f.push_back(find_overlap_from_ids[i][k]);
                         k++;
                     }
                     else if(k==find_overlap_from_ids[i].size())
                     {
-                        not_common.pb(find_overlap_from_ids[j][l]);
-                        not_common_parts.s.pb(find_overlap_from_ids[j][l]);
+                        not_common.push_back(find_overlap_from_ids[j][l]);
+                        not_common_parts.second.push_back(find_overlap_from_ids[j][l]);
                         l++;
                     }
                     else
                     {
                         if(find_overlap_from_ids[i][k]==find_overlap_from_ids[j][l])
                         {
-                            common.pb(find_overlap_from_ids[i][k]);
+                            common.push_back(find_overlap_from_ids[i][k]);
                             k++;
                             l++;
                         }
@@ -922,14 +922,14 @@ public:
                         {
                             if(find_overlap_from_ids[i][k]>find_overlap_from_ids[j][l])
                             {
-                                not_common.pb(find_overlap_from_ids[j][l]);
-                                not_common_parts.s.pb(find_overlap_from_ids[j][l]);
+                                not_common.push_back(find_overlap_from_ids[j][l]);
+                                not_common_parts.second.push_back(find_overlap_from_ids[j][l]);
                                 l++;
                             }
                             else
                             {
-                                not_common.pb(find_overlap_from_ids[i][k]);
-                                not_common_parts.f.pb(find_overlap_from_ids[i][k]);
+                                not_common.push_back(find_overlap_from_ids[i][k]);
+                                not_common_parts.f.push_back(find_overlap_from_ids[i][k]);
                                 k++;
                             }
                         }
@@ -939,7 +939,7 @@ public:
                 {
                     /*for(int i=0;i<not_common_parts.f.size();i++)
                      {
-                     for(int j=0;j<not_common_pars.s.size();j++)
+                     for(int j=0;j<not_common_pars.second.size();j++)
                      {
                      int node_a = not_common_parts[i];
                      int node_b = not_common_parts[j];
@@ -948,13 +948,13 @@ public:
                      assert(nodes[node_b].not_id == node_a);
                      assert(nodes[prev_nodes_ids[i]].compute.is_and_node||nodes[node_id].compute.is_and_node);
                      assert(nodes[prev_nodes_ids[i]].compute.is_or_node||nodes[node_id].compute.is_or_node);
-                     to_compress.pb(mp(mp(common, ))
+                     to_compress.push_back(make_pair(make_pair(common, ))
                      }
                      }
                      }*/
                     if(nodes[not_common[0]].not_id == not_common[1])
                     {
-                        to_compress.pb(mp(common, mp(possibly_removable_edges_ids[i], possibly_removable_edges_ids[j])));
+                        to_compress.push_back(make_pair(common, make_pair(possibly_removable_edges_ids[i], possibly_removable_edges_ids[j])));
                     }
 
                     if(nodes[prev_nodes_ids[i]].compute.is_same_operation(nodes[prev_nodes_ids[j]].compute)&&
@@ -975,7 +975,7 @@ public:
                     if(nodes[prev_nodes_ids[i]].compute.is_same_operation(nodes[prev_nodes_ids[j]].compute)&&
                        !nodes[prev_nodes_ids[i]].compute.is_same_operation(nodes[node_id].compute))
                     {
-                        to_generalize.pb(mp(mp(common[0], not_common_parts),  mp(possibly_removable_edges_ids[i], possibly_removable_edges_ids[j])));
+                        to_generalize.push_back(make_pair(make_pair(common[0], not_common_parts),  make_pair(possibly_removable_edges_ids[i], possibly_removable_edges_ids[j])));
                     }
                     else
                     {
@@ -1000,8 +1000,8 @@ public:
         set<int> remove_edge_ids;
         for(int i=0;i<to_compress.size();i++)
         {
-            int removeEdge_id[2] = {to_compress[i].s.f, to_compress[i].s.s};
-            int case_node_id = edges[to_compress[i].s.f].to;
+            int removeEdge_id[2] = {to_compress[i].second.f, to_compress[i].second.s};
+            int case_node_id = edges[to_compress[i].second.f].to;
 
             assert(edges[removeEdge_id[0]].to == edges[removeEdge_id[1]].to);
 
@@ -1012,8 +1012,8 @@ public:
             //remove_edge(removeEdge_id[1]);
 
             vector<int> generalizedNodes;
-            generalizedNodes.pb(edges[removeEdge_id[0]].from);
-            generalizedNodes.pb(edges[removeEdge_id[1]].from);
+            generalizedNodes.push_back(edges[removeEdge_id[0]].from);
+            generalizedNodes.push_back(edges[removeEdge_id[1]].from);
 
             int newNode_id = find_node_from(to_compress[i].f, nodes[generalizedNodes[0]].compute.same_operation());
             if(newNode_id == -1)
@@ -1028,7 +1028,7 @@ public:
         int dobreak = false;
         for(int i=0;i<to_generalize.size();i++)
         {
-            int removeEdge_id[2] = {to_generalize[i].s.f, to_generalize[i].s.s};
+            int removeEdge_id[2] = {to_generalize[i].second.f, to_generalize[i].second.s};
 
             int common = to_generalize[i].f.f;
 
@@ -1039,47 +1039,47 @@ public:
             //remove_edge(removeEdge_id[1]);
 
             vector<int> generalizedNodes;
-            generalizedNodes.pb(edges[removeEdge_id[0]].from);
-            generalizedNodes.pb(edges[removeEdge_id[1]].from);
+            generalizedNodes.push_back(edges[removeEdge_id[0]].from);
+            generalizedNodes.push_back(edges[removeEdge_id[1]].from);
 
             assert(!nodes[node_id].compute.is_same_operation(nodes[generalizedNodes[0]].compute));
             assert(nodes[generalizedNodes[0]].compute.is_same_operation(nodes[generalizedNodes[1]].compute));
 
             int part_a;
             int part_b;
-            if(to_generalize[i].f.s.f.size()==1)
+            if(to_generalize[i].f.second.f.size()==1)
             {
-                part_a = to_generalize[i].f.s.f[0];
+                part_a = to_generalize[i].f.second.f[0];
             }
             else
             {
                 assert(0);
-                part_a = find_node_from(to_generalize[i].f.s.f, nodes[generalizedNodes[0]].compute);
+                part_a = find_node_from(to_generalize[i].f.second.f, nodes[generalizedNodes[0]].compute);
                 if(part_a==-1)
                 {
                     part_a = initNode(nodes[generalizedNodes[0]].compute.same_operation(), origin("combine", generalizedNodes));
-                    addEdges_in(to_generalize[i].f.s.f, part_a);
+                    addEdges_in(to_generalize[i].f.second.f, part_a);
                 }
             }
-            if(to_generalize[i].f.s.s.size()==1)
+            if(to_generalize[i].f.second.s.size()==1)
             {
-                part_b = to_generalize[i].f.s.s[0];
+                part_b = to_generalize[i].f.second.second[0];
             }
             else
             {
                 assert(0);
-                part_b = find_node_from(to_generalize[i].f.s.s, nodes[generalizedNodes[1]].compute);
+                part_b = find_node_from(to_generalize[i].f.second.second, nodes[generalizedNodes[1]].compute);
                 if(part_b == -1)
                 {
                     part_b = initNode(nodes[generalizedNodes[1]].compute.same_operation(), origin("combine", generalizedNodes));
-                    addEdges_in(to_generalize[i].f.s.s, part_b);
+                    addEdges_in(to_generalize[i].f.second.second, part_b);
                 }
             }
 
 
             vector<int> parts;
-            parts.pb(part_a);
-            parts.pb(part_b);
+            parts.push_back(part_a);
+            parts.push_back(part_b);
 
             int combine_node_id = find_node_from(parts, nodes[node_id].compute.same_operation());
             if(combine_node_id==-1)
@@ -1089,8 +1089,8 @@ public:
             }
 
             vector<int> compressedExpression;
-            compressedExpression.pb(to_generalize[i].f.f);
-            compressedExpression.pb(combine_node_id);
+            compressedExpression.push_back(to_generalize[i].f.f);
+            compressedExpression.push_back(combine_node_id);
             int generalization_node_id;
 
             generalization_node_id = find_node_from(compressedExpression, nodes[generalizedNodes[0]].compute.same_operation());
@@ -1100,9 +1100,9 @@ public:
                 addEdges_in(compressedExpression, generalization_node_id);
             }
             bool do_add_edge = true;
-            for(int i=0;i<net[generalization_node_id].size();i++)
+            for(int i=0;i<NeuralNetwork[generalization_node_id].size();i++)
             {
-                if(edges[net[generalization_node_id][i]].to == node_id)
+                if(edges[NeuralNetwork[generalization_node_id][i]].to == node_id)
                 {
                     assert(do_add_edge);
                     do_add_edge = false;
@@ -1136,9 +1136,9 @@ public:
         for(int i=0;i<nodes[not_node_id].edges_in.size();i++)
         {
             int not_operand_id = edges[nodes[not_node_id].edges_in[i]].from;
-            for(int j=0;j<net[not_operand_id].size();j++)
+            for(int j=0;j<NeuralNetwork[not_operand_id].size();j++)
             {
-                int not_covered_id = edges[net[not_operand_id][j]].to;
+                int not_covered_id = edges[NeuralNetwork[not_operand_id][j]].to;
                 nodes[not_covered_id].not_specialize_itteration = specialize_itteration;
             }
         }
@@ -1147,9 +1147,9 @@ public:
         for(int i=0;i<nodes[node_id].edges_in.size();i++)
         {
             int prev_node_id = edges[nodes[node_id].edges_in[i]].from;
-            for(int j=0;j<net[prev_node_id].size();j++)
+            for(int j=0;j<NeuralNetwork[prev_node_id].size();j++)
             {
-                int next_node_id = edges[net[prev_node_id][j]].to;
+                int next_node_id = edges[NeuralNetwork[prev_node_id][j]].to;
                 if
                     (
                      next_node_id != node_id &&
@@ -1170,11 +1170,11 @@ public:
                             if(nodes[next_node_id].specialize_count == nodes[node_id].edges_in.size() &&
                                nodes[node_id].edges_in.size() == nodes[next_node_id].edges_in.size())
                             {
-                                duplicates.pb(next_node_id);
+                                duplicates.push_back(next_node_id);
                             }
                             else if(nodes[next_node_id].specialize_count == nodes[next_node_id].edges_in.size())
                             {
-                                to_specialize_ids.pb(next_node_id);
+                                to_specialize_ids.push_back(next_node_id);
 
                             }
                         }
@@ -1189,17 +1189,17 @@ public:
             map<int, vector<int> > add_edge_ids;
             for(int i=0;i<duplicates.size();i++)
             {
-                for(int j=0;j<net[duplicates[i]].size();j++)
+                for(int j=0;j<NeuralNetwork[duplicates[i]].size();j++)
                 {
-                    int to = edges[net[duplicates[i]][j]].to;
-                    add_edge_ids[to].pb(net[duplicates[i]][j]);
+                    int to = edges[NeuralNetwork[duplicates[i]][j]].to;
+                    add_edge_ids[to].push_back(NeuralNetwork[duplicates[i]][j]);
                 }
                 assert(0);
                 nodes[duplicates[i]].edges_in.clear();
             }
-            for(int i=0;i<net[node_id].size();i++)
+            for(int i=0;i<NeuralNetwork[node_id].size();i++)
             {
-                int to = edges[net[node_id][i]].to;
+                int to = edges[NeuralNetwork[node_id][i]].to;
                 if(add_edge_ids.find(to)!=add_edge_ids.end())
                 {
                     vector<int> edge_ids = add_edge_ids[to];
@@ -1213,7 +1213,7 @@ public:
             }
             for(map<int, vector<int> >::iterator it = add_edge_ids.begin();it!=add_edge_ids.end();it++)
             {
-                vector<int> edge_ids = (*it).s;
+                vector<int> edge_ids = (*it).second;
                 for(int i=0;i<edge_ids.size();i++)
                 {
                     int to = edges[edge_ids[i]].to;
@@ -1228,7 +1228,7 @@ public:
             }
             for(int i=0;i<duplicates.size();i++)
             {
-                assert(net[duplicates[i]].size()==0);
+                assert(NeuralNetwork[duplicates[i]].size()==0);
                 assert(nodes[duplicates[i]].edges_in.size()==0);
             }
         }
@@ -1243,11 +1243,11 @@ public:
         vector<vector<int> > covered_edge_ids;
         for(int i=0;i<nodes[node_id].edges_in.size();i++)
         {
-            from_node_ids.pb(edges[nodes[node_id].edges_in[i]].from);
-            edge_in_ids.pb(nodes[node_id].edges_in[i]);
-            covered.pb(0);
+            from_node_ids.push_back(edges[nodes[node_id].edges_in[i]].from);
+            edge_in_ids.push_back(nodes[node_id].edges_in[i]);
+            covered.push_back(0);
             vector<int> v_empty;
-            covered_edge_ids.pb(v_empty);
+            covered_edge_ids.push_back(v_empty);
         }
 
         vector<int> new_node_from_ids;
@@ -1262,11 +1262,11 @@ public:
                     if(from_node_ids[k]==edges[nodes[to_specialize_ids[i]].edges_in[j]].from)
                     {
                         covered[k]++;
-                        covered_edge_ids[k].pb(nodes[to_specialize_ids[i]].edges_in[j]);
+                        covered_edge_ids[k].push_back(nodes[to_specialize_ids[i]].edges_in[j]);
                         if(covered[k]==to_specialize_ids.size())
                         {
-                            new_node_from_ids.pb(edges[nodes[to_specialize_ids[i]].edges_in[j]].from);
-                            covered_k.pb(k);
+                            new_node_from_ids.push_back(edges[nodes[to_specialize_ids[i]].edges_in[j]].from);
+                            covered_k.push_back(k);
                         }
                     }
                 }
@@ -1346,9 +1346,9 @@ public:
             }
             cout << endl;
             cout << "outputs::";
-            for(int i=0;i<net[test_node_id].size();i++)
+            for(int i=0;i<NeuralNetwork[test_node_id].size();i++)
             {
-                cout << edges[net[test_node_id][i]].to <<" ";
+                cout << edges[NeuralNetwork[test_node_id][i]].to <<" ";
             }
             cout << endl;
         }
@@ -1505,7 +1505,7 @@ public:
             int count_inLinbo = 0;
             for(int i=0;i<n;i++)
             {
-                if((net[i].size()==0&&!nodes[i].lineage.is_output_node)||(nodes[i].edges_in.size()==0&&!nodes[i].lineage.is_input_node))
+                if((NeuralNetwork[i].size()==0&&!nodes[i].lineage.is_output_node)||(nodes[i].edges_in.size()==0&&!nodes[i].lineage.is_input_node))
                     count_inLinbo ++;
 
                 if(true||nodes[i].edges_in.size()>0||nodes[i].lineage.is_input_node)
@@ -1513,7 +1513,7 @@ public:
                     pair<string, string> tmp = generatecode(i, true);
                     string output = tmp.f;
                     if(tmp.f!=""&&tmp.s!="") output+="<=";
-                    output+=tmp.s;
+                    output+=tmp.second;
                     cout << i <<" :: "<< output << endl;
                     cout << "inputs: ";
                     for(int j=0;j<nodes[i].edges_in.size();j++)
@@ -1521,9 +1521,9 @@ public:
                         cout << edges[nodes[i].edges_in[j]].from <<" ";
                     }
                     cout << endl <<"output: ";
-                    for(int j=0;j<net[i].size();j++)
+                    for(int j=0;j<NeuralNetwork[i].size();j++)
                     {
-                        cout << edges[net[i][j]].to <<" ";
+                        cout << edges[NeuralNetwork[i][j]].to <<" ";
                     }
                     cout << endl;
                 }
@@ -1583,7 +1583,7 @@ public:
         vector<bit_signature> ret;
         for(int i=0;i<outputNodes.size();i++)
         {
-            ret.pb(getOutput(outputNodes[i], iteration));
+            ret.push_back(getOutput(outputNodes[i], iteration));
         }
         return ret;
     }
@@ -1643,38 +1643,38 @@ void work_meta_net()
 
 /*void splitEdges_out(int node_id)
  {
- if(net[node_id].size()==0)
+ if(NeuralNetwork[node_id].size()==0)
  {
  return ;
  }
  vector<pair<int, int> > edges_out; //pair<int edge_w, edge_id>
- for(int i=0;i<net[node_id].size();i++)
+ for(int i=0;i<NeuralNetwork[node_id].size();i++)
  {
- int edge_id = net[node_id][i];
- edges_out.pb(mp(edges[edge_id].w, edge_id));
+ int edge_id = NeuralNetwork[node_id][i];
+ edges_out.push_back(make_pair(edges[edge_id].weights, edge_id));
  }
  sort_v(edges_out);
  vector<bit_signature> new_edge_w;
  vector<vector<int> > split_edges;
  vector<int> currentClass;
 
- new_edge_w.pb(edges_out[0].f);
- currentClass.pb(edges_out[0].s);
+ new_edge_w.push_back(edges_out[0].f);
+ currentClass.push_back(edges_out[0].second);
  for(int i=1;i<edges_out.size();i++)
  {
  if(edges_out[i].f!=edges_out[i-1].f)
  {
- split_edges.pb(currentClass);
+ split_edges.push_back(currentClass);
  currentClass.clear();
- new_edge_w.pb(edges_out[i].f);
- currentClass.pb(edges_out[i].s);
+ new_edge_w.push_back(edges_out[i].f);
+ currentClass.push_back(edges_out[i].second);
  }
  else
  {
- currentClass.pb(edges_out[i].s);
+ currentClass.push_back(edges_out[i].second);
  }
  }
- split_edges.pb(currentClass);
+ split_edges.push_back(currentClass);
 
  if(split_edges.size()==edges_out.size() || split_edges.size() == 1)
  {
@@ -1683,8 +1683,8 @@ void work_meta_net()
  vector<int> split_nodes_ids;
  for(int i=0;i<split_edges.size();i++)
  {
- int newNode_id = initNode(computation("=="), origin(mp("if", i), node_id));
- split_nodes_ids.pb(newNode_id);
+ int newNode_id = initNode(computation("=="), origin(make_pair("if", i), node_id));
+ split_nodes_ids.push_back(newNode_id);
  for(int j=0;j<split_edges[i].size();j++)
  {
  int edge_id = split_edges[i][j];
@@ -1698,13 +1698,13 @@ void work_meta_net()
  nodes[split_nodes_ids[1]].not_id = split_nodes_ids[0];
  }
  //debug
- //net[node_id].clear();
+ //NeuralNetwork[node_id].clear();
  addEdges_out(node_id, split_nodes_ids, new_edge_w);
  }
  */
 
 /*
- vector<net> teachers;
+ vector<NeuralNetwork> teachers;
 
  pair<int, int> next_Data_to_split = make_pair(-1, -1);
  assert(teachers.size() == 0);
@@ -1712,7 +1712,7 @@ void work_meta_net()
  for(int i = 0;i<first_split.size();i++)
  {
  cout <<endl << "NEW TEACHER" <<endl << endl;
- net special_teacher = net(inputSize, hiddenLayers, outputSize);
+ NeuralNetwork special_teacher = NeuralNetwork(inputSize, hiddenLayers, outputSize);
  special_teacher.train(&first_split[i], "queue train");
 
  special_teacher.test(&first_split[i], "print result");
@@ -1729,9 +1729,9 @@ void work_meta_net()
  int teacher_id = next_Data_to_split.second;
 
  vector<pair<int, int> > new_split_node;
- for(int i = 0;i<teachers[teacher_id].important_neurons[0].s.size();i++)
+ for(int i = 0;i<teachers[teacher_id].important_neurons[0].second.size();i++)
  {
- int the_bit = teachers[teacher_id].important_neurons[0].s[i];
+ int the_bit = teachers[teacher_id].important_neurons[0].second[i];
  if(the_bit!=0)
  {
  new_split_node.push_back(make_pair(i, the_bit));
@@ -1743,7 +1743,7 @@ void work_meta_net()
  for(int i = 0;i<second_split.size();i++)
  {
  cout <<endl << "NEW TEACHER" <<endl << endl;
- net special_teacher = net(inputSize, hiddenLayers, outputSize);
+ NeuralNetwork special_teacher = NeuralNetwork(inputSize, hiddenLayers, outputSize);
  special_teacher.train(&second_split[i], "queue train");
 
  special_teacher.test(&second_split[i], "print result");
@@ -1766,7 +1766,7 @@ void work_meta_net()
  Data newScripts;
  newScripts.generateData(inputSize, outputSize, type, hintOrder);
 
- net brain = net(inputSize, hiddenLayers, outputSize);
+ NeuralNetwork brain = NeuralNetwork(inputSize, hiddenLayers, outputSize);
  brain.train(&newScripts, "queue train");
 
  hintOrder = brain.topologicalSortOfSamples(&newScripts);
@@ -1809,7 +1809,7 @@ void work_meta_net()
  {
  rekTrain(latice, latice->sampleSize-1);
  }
- else if(type == "full batch train")
+ else if(type == "full Batch train")
  {
  fullBatchTrain(latice, rate);
  }
@@ -1830,8 +1830,8 @@ void work_meta_net()
 
  int trainSetSize = latice->sampleSize;
 
- pair<double, int> next_id = mp(-1, -1);
- pair<double, int> second_id = mp(500, -1);
+ pair<double, int> next_id = make_pair(-1, -1);
+ pair<double, int> second_id = make_pair(500, -1);
 
  int iteration_no = 0;
 
@@ -1839,34 +1839,34 @@ void work_meta_net()
  {
  next_id = get_maximal_error_example(latice, rate, 1).elements[0];
 
- second_id = mp(500, -1);
+ second_id = make_pair(500, -1);
  //goal: select pair of training examples that minimize ( maxaimal over all training examples (error per training examples))
 
  for(int i = 0;i<trainSetSize;i++)
  {
- net one_step_towards_i = net(copy());
+ NeuralNetwork one_step_towards_i = NeuralNetwork(copy());
  one_step_towards_i.backwardPropagate
- (latice->out[next_id.s], one_step_towards_i.forwardPropagate(latice->in[next_id.s], true), rate, false);
+ (latice->out[next_id.second], one_step_towards_i.forwardPropagate(latice->in[next_id.second], true), rate, false);
  one_step_towards_i.backwardPropagate
  (latice->out[i], one_step_towards_i.forwardPropagate(latice->in[i], true), rate, false);
  one_step_towards_i.batchApplyDeltaWeights();
 
  double max_error = one_step_towards_i.get_maximal_error_example(latice, rate, 1).f;
 
- second_id = min(second_id, mp(max_error, i));
+ second_id = min(second_id, make_pair(max_error, i));
  }
 
 
 
- / *next_id = mp(500, -1);
- //next_id = mp(-1, -1);
+ / *next_id = make_pair(500, -1);
+ //next_id = make_pair(-1, -1);
  double second_best = -1;
  vector<vector<vector<bit_signature> > > error_delta_per_i_per_j =
  vector<vector<vector<bit_signature> > >(trainSetSize, vector<vector<bit_signature> >(trainSetSize, vector<bit_signature>(latice->numOutputs, 0)));
  for(int i = 0;i<trainSetSize;i++)
  {
  vector<vector<bit_signature> > prev_error_per_j;
- net one_step_towards_i = net(copy());
+ NeuralNetwork one_step_towards_i = NeuralNetwork(copy());
 
  for(int j = 0;j<trainSetSize;j++)
  {
@@ -1909,12 +1909,12 @@ void work_meta_net()
  {
  second_best = next_id.f;
  }
- next_id = min(next_id, mp(sum_of_sum_of_errors, i));
- //next_id = max(next_id, mp(sum_of_sum_of_errors, i));
+ next_id = min(next_id, make_pair(sum_of_sum_of_errors, i));
+ //next_id = max(next_id, make_pair(sum_of_sum_of_errors, i));
  }
 
  /*vector<pair<double, pair<int, int> > > all_pairs;
- pair<double, pair<int, int> > best_pair = mp(-1, mp(-1, -1));
+ pair<double, pair<int, int> > best_pair = make_pair(-1, make_pair(-1, -1));
  for(int i = 0;i<trainSetSize;i++)
  {
  for(int j = i+1;j<trainSetSize;j++)
@@ -1928,31 +1928,31 @@ void work_meta_net()
  compatible_score += composed_error;
  }
  }
- all_pairs.push_back(mp(compatible_score, mp(i, j)));
- best_pair = max(best_pair, mp(compatible_score, mp(i, j)));
+ all_pairs.push_back(make_pair(compatible_score, make_pair(i, j)));
+ best_pair = max(best_pair, make_pair(compatible_score, make_pair(i, j)));
  }
  }* /
 
  / *sort_v(all_pairs);
  for(int i = 0;i<all_pairs.size();i++)
  {
- cout <<fixed << setprecision(4) << all_pairs[i].f <<"\t" << printVector(latice->in[all_pairs[i].s.f]) <<"\t" << printVector(latice->in[all_pairs[i].s.s]) <<endl;
+ cout <<fixed << setprecision(4) << all_pairs[i].f <<"\t" << printVector(latice->in[all_pairs[i].second.f]) <<"\t" << printVector(latice->in[all_pairs[i].second.second]) <<endl;
  }* /
 
  //break;
  if(next_id.f < second_id.f)
  {
  backwardPropagate
- (latice->out[next_id.s], forwardPropagate(latice->in[next_id.s], true), rate, true);
+ (latice->out[next_id.second], forwardPropagate(latice->in[next_id.second], true), rate, true);
  }
  else
  {
 
  backwardPropagate
- (latice->out[next_id.s], forwardPropagate(latice->in[next_id.s], true), rate, false);
+ (latice->out[next_id.second], forwardPropagate(latice->in[next_id.second], true), rate, false);
 
  backwardPropagate
- (latice->out[second_id.s], forwardPropagate(latice->in[second_id.s], true), rate, false);
+ (latice->out[second_id.second], forwardPropagate(latice->in[second_id.second], true), rate, false);
 
  batchApplyDeltaWeights();
  }
@@ -1964,7 +1964,7 @@ void work_meta_net()
 
  if(printItteration)
  {
- cout << iteration_no << "\t" << next_id.s <<endl;
+ cout << iteration_no << "\t" << next_id.second <<endl;
 
  pair<vector<pair<int, vector<bit_signature> > >, int> currentKnowledge = test(latice);
  int correct = 0;
@@ -1973,15 +1973,15 @@ void work_meta_net()
  correct+=(currentKnowledge.f[i].f==0);
  cout << (currentKnowledge.f[i].f==0);
  }
- assert(correct == trainSetSize-currentKnowledge.s);
+ assert(correct == trainSetSize-currentKnowledge.second);
 
  if(next_id.f < second_id.f)
  {
- cout << fixed << setprecision(4) << (next_id.f > second_id.f) << " == (" << next_id.f  << " < " <<  second_id.f <<") i.e. single " << next_id.s << endl;
+ cout << fixed << setprecision(4) << (next_id.f > second_id.f) << " == (" << next_id.f  << " < " <<  second_id.f <<") i.e. single " << next_id.second << endl;
  }
  else
  {
- cout << fixed << setprecision(4) << (next_id.f > second_id.f) << " == (" << next_id.f  << " < " <<  second_id.f <<") i.e. double " << next_id.s <<" "<< second_id.s << endl;
+ cout << fixed << setprecision(4) << (next_id.f > second_id.f) << " == (" << next_id.f  << " < " <<  second_id.f <<") i.e. double " << next_id.second <<" "<< second_id.second << endl;
  }
 
  }
@@ -2078,10 +2078,10 @@ void work_meta_net()
  vector<pair<double, int> > sorted_by_neg_val;
  vector<pair<double, int> > sorted_by_pos_val;
  vector<pair<double, int> > sorted_by_sum_abs_val;
- pair<double, int> max_abs_val = mp(0, -1);
- pair<double, int> max_negative_val= mp(0, -1);
- pair<double, int> max_positive_val= mp(0, -1);
- pair<double, int> max_sum_val= mp(0, -1);
+ pair<double, int> max_abs_val = make_pair(0, -1);
+ pair<double, int> max_negative_val= make_pair(0, -1);
+ pair<double, int> max_positive_val= make_pair(0, -1);
+ pair<double, int> max_sum_val= make_pair(0, -1);
 
  for(int i = 0;i<care_dimension_per_example.size();i++)
  {
@@ -2159,24 +2159,24 @@ void work_meta_net()
  cout << care_dimension_per_example[i][j] <<" ";
  }
  cout << endl;
- max_abs_val = max(max_abs_val, mp(abs_val, i));
- max_negative_val = max(max_negative_val, mp(neg_val, i));
- max_positive_val = max(max_positive_val, mp(pos_val, i));
- max_sum_val = max(max_sum_val, mp(sum_val, i));
- sorted_by_neg_val.push_back(mp(neg_val, i));
- sorted_by_pos_val.push_back(mp(pos_val, i));
+ max_abs_val = max(max_abs_val, make_pair(abs_val, i));
+ max_negative_val = max(max_negative_val, make_pair(neg_val, i));
+ max_positive_val = max(max_positive_val, make_pair(pos_val, i));
+ max_sum_val = max(max_sum_val, make_pair(sum_val, i));
+ sorted_by_neg_val.push_back(make_pair(neg_val, i));
+ sorted_by_pos_val.push_back(make_pair(pos_val, i));
 
- sorted_by_sum_abs_val.push_back(mp(sum_val, i));
+ sorted_by_sum_abs_val.push_back(make_pair(sum_val, i));
  }
- //cout << max_abs_val.f <<" "<< latice->printVector(latice->in[max_abs_val.s]) <<endl;
- //cout << max_negative_val.f <<" "<< latice->printVector(latice->in[max_negative_val.s]) <<endl;
- //cout << max_positive_val.f <<" "<< latice->printVector(latice->in[max_positive_val.s]) <<endl;
- //cout << max_sum_val.f <<" "<< latice->printVector(latice->in[max_sum_val.s]) <<endl;
+ //cout << max_abs_val.f <<" "<< latice->printVector(latice->in[max_abs_val.second]) <<endl;
+ //cout << max_negative_val.f <<" "<< latice->printVector(latice->in[max_negative_val.second]) <<endl;
+ //cout << max_positive_val.f <<" "<< latice->printVector(latice->in[max_positive_val.second]) <<endl;
+ //cout << max_sum_val.f <<" "<< latice->printVector(latice->in[max_sum_val.second]) <<endl;
  sort_v(sorted_by_neg_val);
  cout << "sorted by negative: " << endl;
  for(int i = 0;i<sorted_by_neg_val.size();i++)
  {
- cout << sorted_by_neg_val[i].f <<" " << latice->printVector(latice->in[sorted_by_neg_val[i].s]) <<endl;
+ cout << sorted_by_neg_val[i].f <<" " << latice->printVector(latice->in[sorted_by_neg_val[i].second]) <<endl;
  }
 
 
@@ -2184,23 +2184,23 @@ void work_meta_net()
  cout << "sorted by positive: " << endl;
  for(int i = 0;i<sorted_by_pos_val.size();i++)
  {
- cout << sorted_by_pos_val[i].f <<" " << latice->printVector(latice->in[sorted_by_pos_val[i].s]) <<endl;
+ cout << sorted_by_pos_val[i].f <<" " << latice->printVector(latice->in[sorted_by_pos_val[i].second]) <<endl;
  }
 
  sort_v(sorted_by_sum_abs_val);
  cout << "sorted by delta negative: " << endl;
  for(int i = 0;i<sorted_by_neg_val.size();i++)
  {
- cout << sorted_by_sum_abs_val[i].f <<" " << latice->printVector(latice->in[sorted_by_sum_abs_val[i].s]) <<endl;
+ cout << sorted_by_sum_abs_val[i].f <<" " << latice->printVector(latice->in[sorted_by_sum_abs_val[i].second]) <<endl;
  }
  * /
  }*/
 /*assert(negative_dimensions.size() != 0);
- //pair<double, int> ret = mp(1000000000, -1);
+ //pair<double, int> ret = make_pair(1000000000, -1);
  //bool no = true;
  for(int i = 0;i<negative_dimensions.size();i++)
  {
- ret = min(ret, mp((double)negative_dimensions[i], i));
+ ret = min(ret, make_pair((double)negative_dimensions[i], i));
  if(negative_dimensions[i] != 0)
  {
  no = false;
@@ -2213,12 +2213,12 @@ void work_meta_net()
  }
  else
  {
- //cout << ret.f << " "<< ret.s <<endl;
- return ret.s;
+ //cout << ret.f << " "<< ret.second <<endl;
+ return ret.second;
  }*/
 
 /*
- int old_build_tree(net::parameters param, int (net::*training_f)(Data*, net::parameters))
+ int old_build_tree(NeuralNetwork::parameters param, int (NeuralNetwork::*training_f)(Data*, NeuralNetwork::parameters))
  {
  int inputSize = the_Data.numInputs;
  int outputSize = the_Data.numOutputs;
@@ -2229,7 +2229,7 @@ void work_meta_net()
  -1
  };
 
- the_teacher = net(inputSize, hiddenLayers, outputSize);
+ the_teacher = NeuralNetwork(inputSize, hiddenLayers, outputSize);
 
  //param.set_iteration_count(the_Data.size());
 
@@ -2297,9 +2297,9 @@ void work_meta_net()
             Data data_with_all_kernels;
             the_Data.add_gates_between_active_bits(the_Data.get_active_bits(), data_with_all_kernels);
 
-            net second_teacher = net(data_with_all_kernels.numInputs, data_with_all_kernels.numOutputs);
+            NeuralNetwork second_teacher = NeuralNetwork(data_with_all_kernels.numInputs, data_with_all_kernels.numOutputs);
             //cout << "init training" <<endl;
-            second_teacher.train(&data_with_all_kernels, param, &net::softPriorityTrain);
+            second_teacher.train(&data_with_all_kernels, param, &NeuralNetwork::softPriorityTrain);
             //cout << "end training" <<endl;
 
             int the_local_bit = second_teacher.the_model.get_worst_dimension();
@@ -2313,7 +2313,7 @@ void work_meta_net()
 
                 Data left_kernel, right_kernel;
                 vector<unit_gate_type> gate_line;
-                gate_line.push_back(mp(the_local_bit, 1));
+                gate_line.push_back(make_pair(the_local_bit, 1));
                 data_with_single_kernel.split(gate_line, left_kernel, right_kernel);
 
                 new_left = new archaic_neural_decision_tree();
@@ -2412,7 +2412,7 @@ void work_meta_net()
  {
  if(positive_dimensions[i]!=0)
  {
- sorted.push_back(mp(positive_dimensions[i], i));
+ sorted.push_back(make_pair(positive_dimensions[i], i));
  }
  }
  sort_v(sorted);
@@ -2420,7 +2420,7 @@ void work_meta_net()
  vector<int> ret;
  for(int i = 0;i<sorted.size();i++)
  {
- ret.push_back(sorted[i].s);
+ ret.push_back(sorted[i].second);
  }
  return ret;
  }*/
@@ -2442,14 +2442,14 @@ void work_meta_net()
  {
  if(the_v[i]!=0)
  {
- sorted.push_back(mp(the_v[i], i));
+ sorted.push_back(make_pair(the_v[i], i));
  }
  }
  sort_v(sorted);
  vector<int> ret;
  for(int i = 0;i<sorted.size();i++)
  {
- ret.push_back(sorted[i].s);
+ ret.push_back(sorted[i].second);
  }
  return ret;
  }*/
@@ -2464,7 +2464,7 @@ void work_meta_net()
  vector<bit_signature> newPredict = forwardPropagate(latice->in[id], 1);
  vector<bit_signature> deltaPredict_actor = delta(predict, newPredict);
 
- deltaPredict delta_actor = mp(id, deltaPredict_actor);
+ deltaPredict delta_actor = make_pair(id, deltaPredict_actor);
 
  bool correct = check(latice->out[id], newPredict, accuarcy);
  assert(new_state.size()==last_state.size());
@@ -2475,13 +2475,13 @@ void work_meta_net()
  {
  if(last_state[i].f==0&&new_state[i].f!=0)//from 0 wrong bits to more than 0 wrong bits
  {
- vector<bit_signature> deltaPredict_hint = delta(last_state[i].s, new_state[i].s);
- deltaPredict delta_hint = mp(i, deltaPredict_hint);
+ vector<bit_signature> deltaPredict_hint = delta(last_state[i].second, new_state[i].second);
+ deltaPredict delta_hint = make_pair(i, deltaPredict_hint);
 
  vector<bit_signature> delta_actor_hint = delta(latice->in[id], latice->in[i]);
- deltaState delta_state = mp(mp(delta_actor, delta_hint), delta_actor_hint);
+ deltaState delta_state = make_pair(make_pair(delta_actor, delta_hint), delta_actor_hint);
  delta_knowledge_graph[delta_state]++;
- new_neurons[mp(mp(i, deltaPredict_hint), delta_actor_hint)]++;
+ new_neurons[make_pair(make_pair(i, deltaPredict_hint), delta_actor_hint)]++;
  clasify_neurons[delta_actor_hint].insert(delta_state);
  count_neuron_activation[delta_actor_hint]++;
 
@@ -2494,7 +2494,7 @@ void work_meta_net()
  vector<bit_signature> delta_actor_hint = delta(latice->in[id], latice->in[i]);
  track_feature_of_dimensions(dimension_easy_score, delta_actor_hint);
  }
- state_action_change[mp(mp(id,last_state[i].f==0), mp(new_state[i].f==0, i))]++;
+ state_action_change[make_pair(make_pair(id,last_state[i].f==0), make_pair(new_state[i].f==0, i))]++;
  }
  }
 
@@ -2540,7 +2540,7 @@ return correct;
  assert(0);
  }
 
- batch get_batch_of_maximal_error_examples(Data* latice, double rate, int num_examples)
+ Batch get_batch_of_maximal_error_examples(Data* latice, double rate, int num_examples)
  {
  /*vector<bit_signature> all_1s(latice->numOutputs, 1);
  return get_batch_of_maximal_error_examples(latice, rate, num_examples, all_1s);* /
@@ -2561,7 +2561,7 @@ return correct;
  return ret;
  }
 
- batch get_batch_of_maximally_difficult_examples(Data* latice, parameters param)
+ Batch get_batch_of_maximally_difficult_examples(Data* latice, parameters param)
  {
  assert(param.batch_width>=1);
  set<batch_element> ret_set;
@@ -2577,7 +2577,7 @@ return correct;
  }
  }
 
- batch ret;
+ Batch ret;
  for(set<batch_element>::iterator it = ret_set.begin(); it!= ret_set.end(); it++)
  {
  ret.push_back((*it));
@@ -2630,7 +2630,7 @@ return correct;
      succeed = false;
      }
      }
-     //cout << "succeed " << succeed << " min batch size = "<< min_batch_size << endl;
+     //cout << "succeed " << succeed << " min Batch size = "<< min_batch_size << endl;
      }while(succeed);
 
 
@@ -2651,7 +2651,7 @@ return correct;
      {
      max_batch_size = at_batch_size;
      }
-     //cout << "min max batch = " << min_batch_size <<" "<< max_batch_size <<endl;
+     //cout << "min max Batch = " << min_batch_size <<" "<< max_batch_size <<endl;
      }
 
      batch_size = min_batch_size;
@@ -2668,7 +2668,7 @@ return correct;
      batch_size = 1;
      }
 
-     cout << "batch size = " << batch_size <<endl;
+     cout << "Batch size = " << batch_size <<endl;
      */
 
 

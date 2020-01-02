@@ -448,7 +448,7 @@ public:
 
 
             int f_dim = operands[id].f;
-            int s_dim = operands[id].s;
+            int s_dim = operands[id].second;
 
             vector<int> gate_buckets;
             int type;
@@ -502,7 +502,7 @@ public:
             int gates[10] = {1, 2, 4, 6, 7, 8, 9, 11, 13, 14}; int num_gates = 10;
             for(int i = 0;i<num_gates;i++)
             {
-                all_new_operators.push_back(operator_signature(&bit_signature::set_temporary, gates[i], operands[id].f, operands[id].s));
+                all_new_operators.push_back(operator_signature(&bit_signature::set_temporary, gates[i], operands[id].first, operands[id].second));
             }
         }
         return all_new_operators;
@@ -807,9 +807,9 @@ public:
             int num_unmatched = 0;
             for(int j = 0;j<split_idx.size();j++)
             {
-                assert(in[i].size() > split_idx[j].f.vector_id);
-                int bit = in[i][split_idx[j].f.vector_id];
-                if(bit == split_idx[j].s)
+                assert(in[i].size() > split_idx[j].first.vector_id);
+                int bit = in[i][split_idx[j].first.vector_id];
+                if(bit == split_idx[j].second)
                 {
                     num_matched++;
                 }
@@ -838,22 +838,22 @@ public:
         assert(in.size()==out.size());
         for(int i = 0;i<in.size();i++)
         {
-            assert(in[i].size() > split_id.f.vector_id);
+            assert(in[i].size() > split_id.first.vector_id);
 
             vector<bit_signature> new_in;
             for(int j = 0, new_j = 0;j<in[i].size();j++)
             {
-                if(split_id.f.vector_id == j) {
+                if(split_id.first.vector_id == j) {
                     //continue since we remove this bit
                 }
                 else {
-                    new_in.pb(bit_signature(in[i][j].value, new_j));
+                    new_in.push_back(bit_signature(in[i][j].value, new_j));
                     new_j++;
                 }
             }
 
-            int bit = in[i][split_id.f.vector_id];
-            if(bit == split_id.s)
+            int bit = in[i][split_id.first.vector_id];
+            if(bit == split_id.second)
             {
                 first.push_back(new_in, out[i]);
             }
@@ -886,7 +886,7 @@ public:
 
     void init_exaustive_table_with_unary_output(int num_bits, long long output)
     {
-        cout << "HERE" <<endl;
+//        cout << "HERE" <<endl;
         for(int i = 0;i<(1<<num_bits);i++)
         {
             vector<bit_signature> new_in;
@@ -927,28 +927,28 @@ public:
 
     bit_signature get_most_entropic_input_bit()
     {
-        pair<double, bit_signature> most_entropic_input_bit = mp(1000, bit_signature(-1));
+        pair<double, bit_signature> most_entropic_input_bit = make_pair(1000, bit_signature(-1));
         for(int i = 0;i<numInputs;i++)
         {
             map<vector<bit_signature>, pair<int, int> > category_sizes;
-            pair<int, int>  total_size = mp(0, 0);
+            pair<int, int>  total_size = make_pair(0, 0);
 
             for(int j = 0;j<size();j++)
             {
                 if(category_sizes.find(out[j]) == category_sizes.end())
                 {
-                    category_sizes[out[j]] = mp(0, 0);
+                    category_sizes[out[j]] = make_pair(0, 0);
                 }
 
                 if(in[j][i] == 1.0)
                 {
-                    category_sizes[out[j]].f++;
-                    total_size.f++;
+                    category_sizes[out[j]].first++;
+                    total_size.first++;
                 }
                 else if(in[j][i] == -1.0)
                 {
-                    category_sizes[out[j]].s++;
-                    total_size.s++;
+                    category_sizes[out[j]].second++;
+                    total_size.second++;
                 }
                 else
                 {
@@ -957,24 +957,24 @@ public:
 
             }
 
-            if(total_size.f != 0 && total_size.s != 0)
+            if(total_size.first != 0 && total_size.second != 0)
             {
 
                 pair<double, double> entropy;
                 for(map<vector<bit_signature>, pair<int, int> >::iterator it = category_sizes.begin(); it != category_sizes.end(); it++)
                 {
                     assert(2*entropy_measure(1, 2) == 1);
-                    entropy.f+=entropy_measure((*it).s.f, total_size.f);
-                    entropy.s+=entropy_measure((*it).s.s, total_size.s);
-                    //cout << printVector((*it).f) << " :: " << (*it).s.f <<" "<< (*it).s.s << endl;
+                    entropy.first+=entropy_measure((*it).second.first, total_size.first);
+                    entropy.second+=entropy_measure((*it).second.second, total_size.second);
+                    //cout << printVector((*it).f) << " :: " << (*it).second.f <<" "<< (*it).second.second << endl;
                 }
-                double score = (entropy.f+entropy.s);
+                double score = (entropy.first+entropy.second);
 
                 assert(0<=score && score <=2);
                 //cout << score;
                 //cout << endl;
                 //cout << score <<" ";
-                most_entropic_input_bit = min(most_entropic_input_bit, mp(score, bit_signature(i)));
+                most_entropic_input_bit = min(most_entropic_input_bit, make_pair(score, bit_signature(i)));
 
             }
 
@@ -982,8 +982,8 @@ public:
         //cout << endl;
 
         //cout << endl;
-        //cout << most_entropic_input_bit.s.vector_id <<endl;
-        return most_entropic_input_bit.s;
+        //cout << most_entropic_input_bit.second.vector_id <<endl;
+        return most_entropic_input_bit.second;
     }
 
     void generateData(int &ret_numInputs, int &ret_numOutputs, string &ret_typ);
@@ -1078,98 +1078,17 @@ public:
         return count_wrong_bits(id, predict) == 0;
     }
 };
-class DecisionTreeScore
-{
-public:
-    double size = -1;
-    int num_solutions = -1;
 
-    vector<string> dt_strings;
-    vector<string> if_cpp_format_strings;
-    vector<string> if_python_format_strings;
-
-
-    DecisionTreeScore()
-    {
-
-    }
-
-    DecisionTreeScore(double _size, string _decision_tree_in_string)
-    {
-        size = _size;
-        dt_strings.pb(_decision_tree_in_string);
-    }
-
-    bool operator < (const DecisionTreeScore& other) const
-    {
-        /*if(size == other.size)
-        {
-            return num_solutions > other.num_solutions;
-        }*/
-        return size < other.size;
-    }
-
-    bool operator == (const DecisionTreeScore& other) const
-    {
-        return size == other.size && num_solutions == other.num_solutions;
-    }
-
-    string print()
-    {
-        return std::to_string((int)size);
-        //return "("+std::to_string((int)size) + " " + std::to_string(num_solutions)+")";
-    }
-
-    string print(int id)
-    {
-        return "("+std::to_string((int)size) + + ", id=" + std::to_string(id)+")";
-    }
-
-};
-
-
-
-class DataAndScore: public Data
-{
-public:
-
-    DecisionTreeScore score;
-
-    DataAndScore(DecisionTreeScore _score): Data()
-    {
-        score = _score;
-    }
-
-    DataAndScore(): Data()
-    {
-
-    }
-
-
-    virtual string print() override
-    {
-
-        return  printConcatinateOutput() + " " + score.print();
-
-    }
-
-    bool operator < (const DataAndScore& other) const
-    {
-        return score < other.score;
-    }
-
-};
-
-class DataAndNeuralError: public DataAndScore
-{
-public:
-    double neuralError;
-
-    DataAndNeuralError(): DataAndScore()
-    {
-
-    }
-};
+//class DataAndNeuralError: public DataAndDecisionTreeScore
+//{
+//public:
+//    double neuralError;
+//
+//    DataAndNeuralError(): DataAndDecisionTreeScore()
+//    {
+//
+//    }
+//};
 
 
 /*if(in[i][active_bits[j]] == 1 && in[i][active_bits[k]] == 1)
