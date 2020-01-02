@@ -25,7 +25,7 @@ public:
     }
 
 
-    virtual string print() override
+    virtual string print(int num_tabs)
     {
 
         return  printConcatinateOutput() + " " + score.print();

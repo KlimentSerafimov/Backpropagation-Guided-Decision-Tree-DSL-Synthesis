@@ -135,11 +135,11 @@ public:
         layers.push_back(Layer((int)new_age_neurons.size(), numOutputs));
     }
     
-    vector<bit_signature> forwardPropagate(vector<bit_signature> input, bool remember)
+    vector<bit_signature> * forwardPropagate(vector<bit_signature> *input, bool remember)
     {
         count_feedforward+=remember;
         
-        vector<bit_signature> layerOutput = input;
+        vector<bit_signature>* layerOutput = input;
         for(int j=0; j<layers.size(); j++)
         {
             layerOutput = layers[j].output(layerOutput, remember);

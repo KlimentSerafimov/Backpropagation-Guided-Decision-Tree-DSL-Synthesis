@@ -64,9 +64,9 @@ void Neuron::disregard_input(int input_id)
     disregard[input_id] = true;
 }
 
-double Neuron::output(vector<bit_signature> input, bool remember)
+double Neuron::output(vector<bit_signature> *input, bool remember)
 {
-    assert(input.size()==num_inputs);
+    assert(input->size()==num_inputs);
 
     double sum = -t;
     if(remember)previous_input.clear();
@@ -74,8 +74,8 @@ double Neuron::output(vector<bit_signature> input, bool remember)
     {
         if(!disregard[j])
         {
-            if(remember)previous_input.push_back(input[j]);
-            sum += input[j]*weights[j];
+            if(remember)previous_input.push_back(input->at(j));
+            sum += input->at(j)*weights[j];
         }
     }
     double ret = sigmoid(sum);

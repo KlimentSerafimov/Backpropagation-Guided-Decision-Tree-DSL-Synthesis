@@ -721,7 +721,7 @@ public:
         double epsilon =learning_param.init_epsilon;
         double temperature =learning_param.init_temperature;
 
-        int max_num_iter =learning_param.max_num_iter;
+        int max_num_iter = learning_param.max_num_iter;
 
         if(print)
         {
@@ -796,16 +796,6 @@ public:
         }
 
         return global_best_solution;
-    }
-
-    void order_tasks_by_difficulty_via_mutli_task_learning(
-            NeuralNetworkAndScore &global_best_solution,
-            vector<datatype> f_data,
-            bool print,
-            int leaf_iter_init,
-            double treshold)
-    {
-        assert(0);
     }
 
 
@@ -898,10 +888,6 @@ public:
         cout << "------------------------------------------------------------------" <<endl;
         tout << at_walking_solution.clean_print() << endl;
     }
-
-
-
-
 
 
     void reptile_train(
@@ -1031,7 +1017,7 @@ public:
 
     void evaluate_unit_task_print(DataAndDecisionTreeScore* data, int local_iter, double local_error)
     {
-        cout << data->print() <<"\t"<< local_iter << "\t" << local_error << endl;
+        cout << data->print(0) <<"\t"<< local_iter << "\t" << local_error << endl;
     }
 
     void evaluate_unit_task_print(Data* data, int local_iter, double local_error)
@@ -1091,7 +1077,7 @@ public:
 
         if(print)
         {
-            assert(0); // need to implement better local_iter print function in evaluate_unit_task_print
+//            assert(0); // need to implement better local_iter print function in evaluate_unit_task_print
             evaluate_unit_task_print(data, local_iter, local_error.second);
         }
 

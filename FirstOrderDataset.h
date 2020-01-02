@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <iostream>
+#include "util.h"
 
 using namespace std;
 
@@ -23,19 +24,20 @@ public:
 
     }
 
-    void print()
+    string print(int num_tabs)
     {
-        cout << "TRAIN" <<endl;
+        string ret;
+        ret+=get_tab(num_tabs)+"TRAIN\n";
         for(int i = 0;i<train_data.size();i++)
         {
-            cout << train_data[i].print() << endl;
+            ret+=get_tab(num_tabs) + train_data[i].print(num_tabs+1)+"\n";
         }
-        cout << "TEST" <<endl;
+        ret+=get_tab(num_tabs)+"TEST\n";
         for(int i = 0;i<test_data.size();i++)
         {
-            cout << test_data[i].print() << endl;
+            ret+=get_tab(num_tabs) +test_data[i].print(num_tabs+1) +"\n";
         }
-
+        return ret;
     }
 };
 

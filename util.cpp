@@ -35,6 +35,18 @@ double max_of_vector(vector<bit_signature> v)
     return ret;
 }
 
+double get_max_of_error_vector(vector<bit_signature>* correct, vector<bit_signature>* predict, int the_pow)
+{
+    assert(correct->size()==predict->size());
+    double max_error = -1;
+    for(int i=0; i<predict->size(); i++)
+    {
+        double difference = correct->at(i)-predict->at(i);
+        max_error = max(max_error, abs(pow(difference, the_pow)));
+    }
+    return max_error;
+}
+
 vector<bit_signature> get_error_vector(vector<bit_signature> correct, vector<bit_signature> predict, int the_pow)
 {
     assert(correct.size()==predict.size());
@@ -47,14 +59,14 @@ vector<bit_signature> get_error_vector(vector<bit_signature> correct, vector<bit
     return error;
 }
 
-bool check(vector<bit_signature> correct, vector<bit_signature> predict, double accuracy)
+bool check(vector<bit_signature> *correct, vector<bit_signature> *predict, double accuracy)
 {
-    assert(correct.size()==predict.size());
-    for(int i=0; i<predict.size(); i++)
+    assert(correct->size()==predict->size());
+    for(int i=0; i<predict->size(); i++)
     {
         //assert(((predict[i]>0.5)!=(correct[i]>0.5)) == (abs(correct[i]-predict[i])>0.5));
         //if((predict[i]>0.5)!=(correct[i]>0.5))
-        if(abs(correct[i]-predict[i])>accuracy)
+        if(abs(correct->at(i)-predict->at(i))>accuracy)
         {
             return false;
         }

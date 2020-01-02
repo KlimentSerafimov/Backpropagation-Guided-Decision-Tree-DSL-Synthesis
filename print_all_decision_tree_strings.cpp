@@ -94,7 +94,7 @@ string print_f(int n, int function)
 string print_decision_tree_of_f_cpp(int n, int func)
 {
     cout << "here in print_decision_tree_of_f_cpp" <<endl;
-    DecisionTreeScore score = _get_opt_decision_tree_score(n, func);
+    DecisionTreeScore score = get_opt_decision_tree_score(n, func);
     string tabbed_string;
     assert(score.decision_tree_strings.size() == score.if_cpp_format_strings.size());
     for(int i = 0;i<score.decision_tree_strings.size();i++) {
@@ -113,7 +113,7 @@ string print_decision_tree_of_f_cpp(int n, int func)
 //{
 //    string tabbed_string;
 //    cout << "here in print_decision_tree_of_f_python" <<endl;
-//    DecisionTreeScore score = _get_opt_decision_tree_score(n, func);
+//    DecisionTreeScore score = get_opt_decision_tree_score(n, func);
 //    assert(score.decision_tree_strings.size() == score.if_cpp_format_strings.size());
 //    for(int i = 0;i<score.decision_tree_strings.size();i++) {
 //        string local_str = score.if_python_format_strings[i];//"(dt=" + score.decision_tree_strings[i] + ")";

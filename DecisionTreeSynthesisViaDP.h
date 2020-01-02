@@ -9,6 +9,7 @@
 #include "util.h"
 #include "NeuralNetwork.h"
 #include "DecisionTree.h"
+#include "FunctionAndDecisionTreeScore.h"
 
 static int era_counter = 0;
 
@@ -617,6 +618,8 @@ public:
     }
 };
 
-DecisionTreeScore _get_opt_decision_tree_score(int n, int func);
+DecisionTreeScore get_opt_decision_tree_score(int n, int func);
+
+vector<FunctionAndDecisionTreeScore> get_smallest_f(int n);
 
 #endif //NEURAL_GUIDED_DECISION_TREE_SYNTHESIS_DP_DECISION_TREE_H

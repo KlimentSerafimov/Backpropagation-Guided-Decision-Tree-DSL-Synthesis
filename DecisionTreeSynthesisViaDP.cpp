@@ -6,7 +6,7 @@
 #include "DecisionTreeSynthesisViaDP.h"
 
 
-DecisionTreeScore _get_opt_decision_tree_score(int n, int func)
+DecisionTreeScore get_opt_decision_tree_score(int n, int func)
 {
     //assert(0);
 //    cout << "here?" <<endl;
@@ -22,4 +22,29 @@ DecisionTreeScore _get_opt_decision_tree_score(int n, int func)
             (cutoff_parametes, n, local_new_data, optimal);
 
     return size_opt;
+}
+
+vector<FunctionAndDecisionTreeScore> get_smallest_f(int n)
+{
+
+    assert(n <= 3);
+
+    vector<int> fs;
+
+    for (int i = 0; i < (1 << (1 << n)); i++) {
+        fs.push_back(i);
+    }
+
+    vector<FunctionAndDecisionTreeScore> ordering;
+
+    for(int i = 0;i<fs.size();i++)
+    {
+//        cout << "here in get_smallest_f" <<endl;
+        ordering.push_back(FunctionAndDecisionTreeScore(fs[i], get_opt_decision_tree_score(n, fs[i])));
+    }
+
+    //sort_v(ordering);
+
+    return ordering;
+
 }

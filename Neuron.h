@@ -51,7 +51,7 @@ public:
     Neuron(int _num_in);
     void add_input(int n);
     void disregard_input(int input_id);
-    double output(vector<bit_signature> input, bool remember);
+    double output(vector<bit_signature> *input, bool remember);
     vector<bit_signature> update_weights(double prevDer, double rate, bool apply);
     string printWeights();
     void batchApplyDeltaWeights();
