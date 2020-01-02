@@ -7,9 +7,9 @@
 
 #include "Data.h"
 #include "bit_signature.h"
-#include "net.h"
+#include "NeuralNetwork.h"
 #include "Header.h"
-#include "firstOrderLearning.h"
+#include "FirstOrderLearning.h"
 
 
 typedef Data::unit_gate_type unit_gate_type;
@@ -18,236 +18,40 @@ pair<bit_signature, int> ensamble_teacher
 (
         Data* latice,
         int num_teachers,
-        net::parameters param,
-        net::PriorityTrainReport (net::*training_f)(Data*, net::parameters),
+        NeuralNetwork::parameters param,
+        NeuralNetwork::PriorityTrainReport (NeuralNetwork::*training_f)(Data*, NeuralNetwork::parameters),
         vector<int> choose_from_dimensions
-)
-{
-    vector<int> votes(latice->numInputs, 0);
-
-    for(int i = 0;i<num_teachers;i++)
-    {
-        net new_teacher;
-
-        if( num_teachers >= 2 ||
-            param.neural_net == NULL ||
-            param.neural_net->numInputs != latice->numInputs ||
-            param.neural_net->numOutputs != latice->numOutputs)
-        {
-            new_teacher = net(latice->numInputs, param.get_first_layer(latice->numInputs), latice->numOutputs);
-        }
-        else
-        {
-            new_teacher = *param.neural_net;
-        }
-
-        //new_teacher.set_special_weights();
-        new_teacher.train(latice, param, training_f);
-
-        int local_bit = new_teacher.the_model.get_worst_dimension(choose_from_dimensions);
-        if(local_bit != -1)
-        {
-            //cout << "Some idea" <<endl;
-            /*vector<int> active_bits = latice->get_active_bits();
-            bool enter = false;
-            for(int i = 0;i<active_bits.size();i++)
-            {
-                if(local_bit == active_bits[i])
-                {
-                    enter = true;
-                }
-            }
-            assert(enter);*/
-        }
-        else
-        {
-            //cout << "no idea" <<endl;
-            local_bit = latice->get_first_active_input_bit().vector_id;
-
-            /*vector<int> active_bits = latice->get_active_bits();
-            bool enter = false;
-            for(int i = 0;i<active_bits.size();i++)
-            {
-                if(local_bit == active_bits[i])
-                {
-                    enter = true;
-                }
-            }
-            assert(enter);*/
-        }
-        votes[local_bit]++;
-    }
-
-    pair<int, int> ret_bit = mp(-1, -1);
-
-    sort_v(choose_from_dimensions);
-    for(int at = 0; at<choose_from_dimensions.size();at++)
-    {
-        int i = choose_from_dimensions[at];
-        //cout << votes[i] <<" ";
-        ret_bit = max(ret_bit, mp(votes[i], i));
-    }
-    //cout << endl;
-
-
-    /*cout << "at ensamble" <<endl;
-    Data left_data, right_data;
-
-    cout << latice->circuit[ret_bit.s].print() << " "<< ret_bit.f << endl;
-
-    latice->split(latice->circuit[ret_bit.s], left_data, right_data);
-    //left_data.remove_gates();
-    //right_data.remove_gates();
-
-    assert(left_data.size()>0);
-    assert(right_data.size()>0);
-
-    cout << left_data.size() <<" "<< right_data.size() <<endl;
-    cout << "left" <<endl;
-    for(int i = 0;i<left_data.size();i++)
-    {
-        cout << left_data.printInput(i)<<endl;;
-    }
-    cout << "right" <<endl;
-
-    for(int i = 0;i<right_data.size();i++)
-    {
-        cout << right_data.printInput(i)<<endl;;
-    }
-    cout << "--"<<endl;*/
-
-    return make_pair(latice->circuit[ret_bit.s], ret_bit.f);
-}
+);
 
 pair<bit_signature, int> ensamble_teacher
 (
         Data* latice,
         int num_teachers,
-        net::parameters param,
-        net::PriorityTrainReport (net::*training_f)(Data*, net::parameters)
-)
-{
-    vector<int> choose_from_dimension;
-    for(int i = 0;i<latice->numInputs;i++)
-    {
-        choose_from_dimension.push_back(i);
-    }
-    return ensamble_teacher(latice, num_teachers, param, training_f, choose_from_dimension);
-}
+        NeuralNetwork::parameters param,
+        NeuralNetwork::PriorityTrainReport (NeuralNetwork::*training_f)(Data*, NeuralNetwork::parameters)
+);
 
 pair<pair<bit_signature, bit_signature>, int>
 ensamble_pair_teacher
 (
         Data* latice,
         int num_teachers,
-        net::parameters param,
-        net::PriorityTrainReport (net::*training_f)(Data*, net::parameters),
+        NeuralNetwork::parameters param,
+        NeuralNetwork::PriorityTrainReport (NeuralNetwork::*training_f)(Data*, NeuralNetwork::parameters),
         bool ret_vector,
-        vector<net::data_model::bit_dimension_pair> &ret
-)
-{
-    int get_top = 9;
-    int n = latice->numInputs+1;
-    vector<vector<int> > votes(latice->numInputs, vector<int>(latice->numInputs, 0));
-    int vector_votes[n+1][n+1][get_top+1];
-    memset(vector_votes, 0, sizeof(vector_votes));
-    for(int i = 0;i<num_teachers;i++)
-    {
-        net new_teacher = net(latice->numInputs, latice->numOutputs);
-        new_teacher.train(latice, param, training_f);
-
-        vector<net::data_model::bit_dimension_pair> imporant_pair_dimensions = new_teacher.the_model.sort_dimension_pairs(latice);
-        if(ret_vector)
-        {
-            for(int j = 0;j<imporant_pair_dimensions.size();j++)
-            {
-                if(imporant_pair_dimensions[0].val != 0)
-                {
-                    int f_dim = imporant_pair_dimensions[j].f_dim;
-                    int s_dim = imporant_pair_dimensions[j].s_dim;
-                    vector_votes[f_dim][s_dim][j]++;
-                }
-            }
-        }
-
-        if(imporant_pair_dimensions[0].val != 0)
-        {
-            int f_dim = imporant_pair_dimensions[0].f_dim;
-            int s_dim = imporant_pair_dimensions[0].s_dim;
-            votes[f_dim][s_dim]++;
-        }
-        else
-        {
-            assert(0);
-            pair<bit_signature, bit_signature> p = latice->get_first_active_input_pair();
-            votes[p.first.vector_id][p.second.vector_id]++;
-        }
-    }
-
-    if(ret_vector)
-    {
-        vector<vector<int> > vis(latice->numInputs, vector<int>(latice->numInputs, 0));
-        priority_queue<pair<pair<int, int>, pair<int, int> > > q;
-        for(int i = 0;i<get_top; i++)
-        {
-            //pair<int, pair<int, int> > next = mp(-1, mp(-1, -1));
-
-            for(int j = 0;j<latice->numInputs;j++)
-            {
-                for(int k = j+1; k<latice->numInputs;k++)
-                {
-                    if(vis[j][k]==0 && vector_votes[j][k][i]!=0)
-                        q.push(mp(mp(get_top-i, vector_votes[j][k][i]), mp(j, k)));
-                }
-            }
-            bool found = false;
-
-            pair<pair<int, int>, pair<int, int> > next;
-            while(!found)
-            {
-                assert(!q.empty());
-                pair<pair<int, int>, pair<int, int> > at_next = q.top();
-                q.pop();
-                if(vis[at_next.s.f][at_next.s.s] == 0)
-                {
-                    next = at_next;
-                    found = true;
-                }
-            }
-
-            vis[next.s.f][next.s.s] = 1;
-            //cout << next.s.f <<" "<< next.s.s <<" val = " << next.f.f <<" "<< next.f.s <<", ";
-            ret.push_back(net::data_model::bit_dimension_pair({-1, -1, next.s.f, next.s.s, (double)(next.f.f<<16)+(next.f.s)}));
-        }
-        cout << endl;
-    }
-
-    pair<int, pair<int, int> > ret_bit;
-    for(int i = 0; i<latice->numInputs;i++)
-        for(int j = 0;j<latice->numInputs;j++)
-        {
-            //cout << votes[i] <<" ";
-            ret_bit = max(ret_bit, mp(votes[i][j], make_pair(i, j)));
-        }
-    //cout << endl;
-
-    return make_pair(mp(latice->circuit[ret_bit.s.f], latice->circuit[ret_bit.s.s]), ret_bit.f);
-}
+        vector<NeuralNetwork::data_model::bit_dimension_pair> &ret
+);
 
 pair<pair<bit_signature, bit_signature>, int>
 ensamble_pair_teacher
 (
         Data* latice,
         int num_teachers,
-        net::parameters param,
-        net::PriorityTrainReport (net::*training_f)(Data*, net::parameters)
-)
-{
-    vector<net::data_model::bit_dimension_pair> empty;
-    return ensamble_pair_teacher(latice, num_teachers, param, training_f, false, empty);
-}
+        NeuralNetwork::parameters param,
+        NeuralNetwork::PriorityTrainReport (NeuralNetwork::*training_f)(Data*, NeuralNetwork::parameters)
+);
 
-class decision_tree
+class DecisionTree
 {
 public:
     bool data_defined = false;
@@ -264,30 +68,30 @@ public:
     int height = 1;
     int size = 1;
 
-    decision_tree* left_child = NULL;
-    decision_tree* right_child = NULL;
+    DecisionTree* left_child = NULL;
+    DecisionTree* right_child = NULL;
 
-    decision_tree(){};
+    DecisionTree(){};
 
-    decision_tree(Data* _original_data)
+    DecisionTree(Data* _original_data)
     {
         data_defined = true;
         original_data = *_original_data;
     }
 
-    decision_tree(Data* _original_data, net::parameters training_parameters)
+    DecisionTree(Data* _original_data, NeuralNetwork::parameters training_parameters)
     {
         build_tree(_original_data, training_parameters);
     }
 
-    void build_tree(Data* _original_data, net::parameters training_parameters)
+    void build_tree(Data* _original_data, NeuralNetwork::parameters training_parameters)
     {
         original_data = *_original_data;
         data_defined = true;
         build_tree(training_parameters);
     }
 
-    void build_tree(net::parameters training_parameters)
+    void build_tree(NeuralNetwork::parameters training_parameters)
     {
         assert(data_defined);
         if(original_data.is_constant())
@@ -340,9 +144,9 @@ public:
 
         bool prev_print_close_local_data_model = print_close_local_data_model;
         print_close_local_data_model = false;
-        left_child = new decision_tree(&left_data, training_parameters);
+        left_child = new DecisionTree(&left_data, training_parameters);
         print_close_local_data_model = false;
-        right_child = new decision_tree(&right_data, training_parameters);
+        right_child = new DecisionTree(&right_data, training_parameters);
         print_close_local_data_model = true;
         print_close_local_data_model = prev_print_close_local_data_model;
 
@@ -353,10 +157,10 @@ public:
         //cout << endl;
     }
 
-    void build_or_of_ands_circuit(net::parameters param)
+    void build_or_of_ands_circuit(NeuralNetwork::parameters param)
     {
-        net first_teacher = net(original_data.numInputs, original_data.numOutputs);
-        first_teacher.train(&original_data, param, &net::softPriorityTrain);
+        NeuralNetwork first_teacher = NeuralNetwork(original_data.numInputs, original_data.numOutputs);
+        first_teacher.train(&original_data, param, &NeuralNetwork::softPriorityTrain);
     }
 
     void random_split()
@@ -372,7 +176,7 @@ public:
         augmented_data = original_data;
     }
 
-    void neural_guided_node_selection(net::parameters param)
+    void neural_guided_node_selection(NeuralNetwork::parameters param)
     {
         int n = original_data.numInputs;
 
@@ -389,7 +193,7 @@ public:
 
         vector<Data> first_order_data_for_branches;
         //vector<vector<Data> > second_order_data_for_branches;
-        //vector<vector<net> > net_for_branches;
+        //vector<vector<NeuralNetwork> > net_for_branches;
 
         //original_data.printData("complete_data:");
 
@@ -399,12 +203,12 @@ public:
 
             original_data.split_and_remove_bit(bit_signature(i), left, right);
 
-            //second_order_data_for_branches.pb(vector<Data>());
-            //second_order_data_for_branches[i].pb(left);
-            //second_order_data_for_branches[i].pb(right);
+            //second_order_data_for_branches.push_back(vector<Data>());
+            //second_order_data_for_branches[i].push_back(left);
+            //second_order_data_for_branches[i].push_back(right);
 
-            first_order_data_for_branches.pb(left);
-            first_order_data_for_branches.pb(right);
+            first_order_data_for_branches.push_back(left);
+            first_order_data_for_branches.push_back(right);
 
 
             //cout << "split at i = " << i << endl;
@@ -412,7 +216,7 @@ public:
             //right.printData("right:");
         }
 
-        firstOrderLearning<Data> meta_learner;
+        FirstOrderLearning<Data> meta_learner;
         int ensamble_size = param.ensamble_size;
         //cout << "init reptile train for possible branches" <<endl;
 
@@ -430,23 +234,23 @@ public:
             {
                 assert(n-1<param.progressive_ensamble_nets.size());
                 assert(j<param.progressive_ensamble_nets[n-1].size());
-                net leaf_learner = param.progressive_ensamble_nets[n-1][j];
+                NeuralNetwork leaf_learner = param.progressive_ensamble_nets[n-1][j];
                 //leaf_learner.printWeights();
-                net::parameters leaf_parameters = cutoff_param(param.get_iteration_count(n - 1), 0.01);
+                NeuralNetwork::parameters leaf_parameters = cutoff_param(param.get_iteration_count(n - 1), 0.01);
                 //cout << "init potential branch train" << endl;
 
                 //leaf_learner.printWeights();
 
-                leaf_learner.train(&first_order_data_for_branches[i], leaf_parameters, &net::softPriorityTrain);
+                leaf_learner.train(&first_order_data_for_branches[i], leaf_parameters, &NeuralNetwork::softPriorityTrain);
                 //cout << "end potential branch train" << endl;
-                local_errors.pb(leaf_learner.get_error_of_data(&first_order_data_for_branches[i]).s);
+                local_errors.push_back(leaf_learner.get_error_of_data(&first_order_data_for_branches[i]).second);
             }
-            per_dataset_errors.pb(local_errors);
+            per_dataset_errors.push_back(local_errors);
         }
 
         //cout << "end with error calc, now agregate:" <<endl;
 
-        pair<double, int> best_bit = mp(1000, -1);
+        pair<double, int> best_bit = make_pair(1000, -1);
         for(int i = 0, at_bit = 0;i<per_dataset_errors.size();i+=2, at_bit++)
         {
             vector<double> one = per_dataset_errors[i];
@@ -457,27 +261,27 @@ public:
             //cout << one[0] <<" " << size_one <<" | "<< two[0] << " " << size_two <<endl;
             double sum = size_one+size_two;
 
-            best_bit = min(best_bit, mp(sum, at_bit));
+            best_bit = min(best_bit, make_pair(sum, at_bit));
         }
 
-        //cout << "decided on bit = " << best_bit.s <<endl;
+        //cout << "decided on bit = " << best_bit.second <<endl;
         augmented_data = original_data;
-        decision_node = bit_signature(best_bit.s);
-        assert(decision_node.vector_id == best_bit.s);
+        decision_node = bit_signature(best_bit.second);
+        assert(decision_node.vector_id == best_bit.second);
     }
 
-    void confusion_guided_node_selection(net::parameters param)
+    void confusion_guided_node_selection(NeuralNetwork::parameters param)
     {
         Data local_data  = original_data;
 
         //NeuralNetworkWalker local_family_meta_trainer = NeuralNetworkWalker(local_data);
-        //net first_teacher = local_family_meta_trainer.train_on_local_family();
-        net first_teacher;
+        //NeuralNetwork first_teacher = local_family_meta_trainer.train_on_local_family();
+        NeuralNetwork first_teacher;
         if( param.neural_net == NULL ||
             param.neural_net->numInputs != local_data.numInputs ||
             param.neural_net->numOutputs != local_data.numOutputs)
         {
-            first_teacher = net(local_data.numInputs, param.get_first_layer(local_data.numInputs), local_data.numOutputs);
+            first_teacher = NeuralNetwork(local_data.numInputs, param.get_first_layer(local_data.numInputs), local_data.numOutputs);
         }
         else
         {
@@ -506,7 +310,7 @@ public:
             {
                 if(bits_wanted[i].value != 0 && bits_wanted[j].value != 0)
                 {
-                    important_pair_dimensions.push_back(mp(i, j));
+                    important_pair_dimensions.push_back(make_pair(i, j));
                 }
             }
         }
@@ -516,18 +320,18 @@ public:
 
     }
 
-    void select_decision_tree_node_by_trying_pairs_together(vector<pair<int, int> > important_pair_dimensions, net::parameters param)
+    void select_decision_tree_node_by_trying_pairs_together(vector<pair<int, int> > important_pair_dimensions, NeuralNetwork::parameters param)
     {
-        //cout << "prev second layer: " <<  augmented_data.numInputs << endl;
+        //cout << "prev second Layer: " <<  augmented_data.numInputs << endl;
         original_data.apply_important_pair_dimensions_to_data(important_pair_dimensions, augmented_data);
 
-        //cout << "num ins after second layer: " << second_layer_data.numInputs <<endl;
+        //cout << "num ins after second Layer: " << second_layer_data.numInputs <<endl;
         vector<int> original_dimensions = original_data.get_active_bits();
         /*for(int i = 0;i<original_data.numInputs;i++)
         {
             original_dimensions.push_back(i);
         }*/
-        decision_node = ensamble_teacher(&augmented_data, param.ensamble_size, param, &net::softPriorityTrain, original_dimensions).f;
+        decision_node = ensamble_teacher(&augmented_data, param.ensamble_size, param, &NeuralNetwork::softPriorityTrain, original_dimensions).first;
         assert(decision_node.vector_id < original_data.numInputs);
         //decision_node = augmented_data.select_most_confusing_dimension();
         //cout << "decision node : " << decision_node.print() <<endl <<endl;;
@@ -545,17 +349,17 @@ public:
 
     }
 
-    void second_layer_circuit(vector<pair<int, int> > imporant_pair_dimensions, net::parameters param)
+    void second_layer_circuit(vector<pair<int, int> > imporant_pair_dimensions, NeuralNetwork::parameters param)
     {
         original_data.apply_important_pair_dimensions_to_data(imporant_pair_dimensions, augmented_data);
 
-        vector<net::data_model::bit_dimension_pair> second_order_imporant_pair_dimensions;
-        ensamble_pair_teacher(&augmented_data, pow(param.ensamble_size, 2), param, &net::softPriorityTrain, true, second_order_imporant_pair_dimensions);
+        vector<NeuralNetwork::data_model::bit_dimension_pair> second_order_imporant_pair_dimensions;
+        ensamble_pair_teacher(&augmented_data, pow(param.ensamble_size, 2), param, &NeuralNetwork::softPriorityTrain, true, second_order_imporant_pair_dimensions);
 
         select_decision_tree_node_by_trying_pairs_together(to_vec_pair_int_int(second_order_imporant_pair_dimensions), param);
     }
 
-    vector<pair<int, int> > to_vec_pair_int_int(vector<net::data_model::bit_dimension_pair> imporant_pair_dimensions)
+    vector<pair<int, int> > to_vec_pair_int_int(vector<NeuralNetwork::data_model::bit_dimension_pair> imporant_pair_dimensions)
     {
         vector<pair<int, int> > operator_pair_ids;
         for(int i = 0;i<9;i++)
@@ -565,13 +369,13 @@ public:
         return operator_pair_ids;
     }
 
-    void construct_decision_tree_node(net::parameters param)
+    void construct_decision_tree_node(NeuralNetwork::parameters param)
     {
         param.batch_width = 3;
         param.ensamble_size = 3;
 
-        vector<net::data_model::bit_dimension_pair> imporant_pair_dimensions;
-        ensamble_pair_teacher(&original_data, 20, param, &net::softPriorityTrain, true, imporant_pair_dimensions);
+        vector<NeuralNetwork::data_model::bit_dimension_pair> imporant_pair_dimensions;
+        ensamble_pair_teacher(&original_data, 20, param, &NeuralNetwork::softPriorityTrain, true, imporant_pair_dimensions);
 
         //second_layer_circuit(to_vec_pair_int_int(imporant_pair_dimensions), param);
         //select_decision_tree_node_by_trying_pairs_together(to_vec_pair_int_int(imporant_pair_dimensions), param);
@@ -581,7 +385,7 @@ public:
 
 
 
-    void select_decision_tree_node_by_trying_pairs_one_by_one(vector<pair<int, int> > imporant_pair_dimensions, net::parameters param)
+    void select_decision_tree_node_by_trying_pairs_one_by_one(vector<pair<int, int> > imporant_pair_dimensions, NeuralNetwork::parameters param)
     {
 
         vector<operator_signature> operators_to_try = original_data.get_operators(imporant_pair_dimensions);
@@ -589,11 +393,11 @@ public:
         /*
 
          pair<pair<bit_signature, bit_signature>, int>
-         best_pair = ensamble_pair_teacher(&original_data, 20, training_parameters, &net::softPriorityTrain);
+         best_pair = ensamble_pair_teacher(&original_data, 20, training_parameters, &NeuralNetwork::softPriorityTrain);
 
          vector<int> gate_operands;
          gate_operands.push_back(best_pair.f.f.vector_id);
-         gate_operands.push_back(best_pair.f.s.vector_id);
+         gate_operands.push_back(best_pair.f.second.vector_id);
 
          vector<operator_signature> operators_to_try = original_data.get_operators(gate_operands);
          */
@@ -612,10 +416,10 @@ public:
 
             //cout <<"operator applied: " << operators_to_try[i].print() <<endl;
             pair<bit_signature, int>
-                    the_bit_and_score = ensamble_teacher(&new_data, param.ensamble_size, param, &net::softPriorityTrain);
+                    the_bit_and_score = ensamble_teacher(&new_data, param.ensamble_size, param, &NeuralNetwork::softPriorityTrain);
 
-            bit_signature the_bit = the_bit_and_score.f;
-            int score = the_bit_and_score.s;
+            bit_signature the_bit = the_bit_and_score.first;
+            int score = the_bit_and_score.second;
 
             int id = i;
 
@@ -637,15 +441,15 @@ public:
         }
         else
         {
-            pair<bit_signature, int> tmp = ensamble_teacher(&original_data, param.ensamble_size, param, &net::softPriorityTrain);
-            decision_node = tmp.f;
+            pair<bit_signature, int> tmp = ensamble_teacher(&original_data, param.ensamble_size, param, &NeuralNetwork::softPriorityTrain);
+            decision_node = tmp.first;
             augmented_data = original_data;
         }
 
 
     }
 
-    void construct_decision_tree_node_by_trying_pairs_one_by_one(net::parameters param)
+    void construct_decision_tree_node_by_trying_pairs_one_by_one(NeuralNetwork::parameters param)
     {
         param.batch_width = 3;
         param.ensamble_size = 2;
@@ -655,35 +459,35 @@ public:
         bool has_new_operator = false;
 
         Data* latice = &original_data;
-        net new_teacher = net(latice->numInputs, latice->numOutputs);
-        new_teacher.train(latice, param, &net::softPriorityTrain);
+        NeuralNetwork new_teacher = NeuralNetwork(latice->numInputs, latice->numOutputs);
+        new_teacher.train(latice, param, &NeuralNetwork::softPriorityTrain);
 
-        vector<net::data_model::bit_dimension_pair> imporant_pair_dimensions = new_teacher.the_model.sort_dimension_pairs(latice);
+        vector<NeuralNetwork::data_model::bit_dimension_pair> imporant_pair_dimensions = new_teacher.the_model.sort_dimension_pairs(latice);
 
         select_decision_tree_node_by_trying_pairs_one_by_one(to_vec_pair_int_int(imporant_pair_dimensions), param);
 
 
 
-        //training_parameters.neutral_net = new net(original_data.numInputs, original_data.numOutputs);
+        //training_parameters.neutral_net = new NeuralNetwork(original_data.numInputs, original_data.numOutputs);
         //training_parameters.neutral_net->train_to_neutral_data(&original_data, training_parameters);
 
         /*for(int test_id = 0; test_id < 10; test_id++)
         {
-            pair<pair<bit_signature, bit_signature>, int> best_pair = ensamble_pair_teacher(&original_data, 60, training_parameters, &net::softPriorityTrain);
-            cout << best_pair.f.f.vector_id <<" "<< best_pair.f.s.vector_id <<" "<< best_pair.s <<endl;
+            pair<pair<bit_signature, bit_signature>, int> best_pair = ensamble_pair_teacher(&original_data, 60, training_parameters, &NeuralNetwork::softPriorityTrain);
+            cout << best_pair.f.f.vector_id <<" "<< best_pair.f.second.vector_id <<" "<< best_pair.second <<endl;
 
-            //pair<bit_signature, int> the_bit_and_score = ensamble_teacher(&original_data, training_parameters.ensamble_size, training_parameters, &net::softPriorityTrain);
+            //pair<bit_signature, int> the_bit_and_score = ensamble_teacher(&original_data, training_parameters.ensamble_size, training_parameters, &NeuralNetwork::softPriorityTrain);
 
             //cout << the_bit_and_score.first.vector_id <<" "<< the_bit_and_score.second <<endl;
         }*/
 
         /*
-        net first_teacher = net(original_data.numInputs, original_data.numOutputs);
-        first_teacher.train(&original_data, training_parameters, &net::softPriorityTrain);*/
+        NeuralNetwork first_teacher = NeuralNetwork(original_data.numInputs, original_data.numOutputs);
+        first_teacher.train(&original_data, training_parameters, &NeuralNetwork::softPriorityTrain);*/
 
         /*vector<bit_signature> imporant_single_dimensions = first_teacher.the_model.sort_single_dimensions();
-        vector<net::data_model::bit_dimension_pair> imporant_pair_dimensions = first_teacher.the_model.sort_dimension_pairs();
-        vector<net::data_model::bit_dimension_pair> imporant_bit_pair_dimensions = first_teacher.the_model.sort_bit_dimension_pairs();
+        vector<NeuralNetwork::data_model::bit_dimension_pair> imporant_pair_dimensions = first_teacher.the_model.sort_dimension_pairs();
+        vector<NeuralNetwork::data_model::bit_dimension_pair> imporant_bit_pair_dimensions = first_teacher.the_model.sort_bit_dimension_pairs();
 
         vector<operator_signature> operators_to_try = original_data.get_operators(range_vector(0, original_data.numInputs-1));
 
@@ -711,16 +515,16 @@ public:
             Data new_data;
             original_data.apply_new_operator_to_data(operators_to_try[i], new_data);
 
-            pair<bit_signature, int> the_bit_and_score = ensamble_teacher(&new_data, training_parameters.ensamble_size, training_parameters, &net::softPriorityTrain);
+            pair<bit_signature, int> the_bit_and_score = ensamble_teacher(&new_data, training_parameters.ensamble_size, training_parameters, &NeuralNetwork::softPriorityTrain);
 
             bit_signature the_bit = the_bit_and_score.f;
-            int score = the_bit_and_score.s;
+            int score = the_bit_and_score.second;
 
             int id = i;
 
             if(the_bit.vector_id == new_data.numInputs-1)
             {
-                potential_operator_ids.push_back(mp(score, i));
+                potential_operator_ids.push_back(make_pair(score, i));
                 cout << i <<endl;
                 cout << bitset<4>(operators_to_try[id].gate).to_string() <<" " << operators_to_try[id].operands[0] << " "<< operators_to_try[id].operands[1] << " " << score <<endl;
                 cout << "YES" <<endl;
@@ -737,7 +541,7 @@ public:
 
         for(int i = 0;i<potential_operator_ids.size();i++)
         {
-            int id = potential_operator_ids[i].s;
+            int id = potential_operator_ids[i].second;
             cout << bitset<4>(operators_to_try[id].gate).to_string() <<" " << operators_to_try[id].operands[0] << " "<< operators_to_try[id].operands[1] << " "<< potential_operator_ids[i].f << endl;
         }
 

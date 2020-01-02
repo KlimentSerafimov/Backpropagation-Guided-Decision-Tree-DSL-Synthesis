@@ -8,9 +8,9 @@
 
 #include "Header.h"
 #include "Data.h"
-#include "batch.h"
+#include "Batch.h"
 
-class BackpropTrajectory: public vector<batch> {
+class BackpropTrajectory: public vector<Batch> {
 
 public:
     Data *origin;

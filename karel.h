@@ -103,7 +103,7 @@ class karel_interpreter
     {
         for(int i = 0;i<n;i++)
         {
-            code.pb(static_cast<primitive>(rand(0, 3)));
+            code.push_back(static_cast<primitive>(rand(0, 3)));
         }
     }
 };

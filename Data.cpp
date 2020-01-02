@@ -39,7 +39,7 @@ void longestSubstring_dai_di_is_0
             {
                 a=-1;
             }
-            sample.pb(a);
+            sample.push_back(a);
         }
         rev_v(sample);
         int ret = 1, pos = 0, now = 1;
@@ -63,15 +63,15 @@ void longestSubstring_dai_di_is_0
         {
             if(pos-ret<j&&j<=ret)
             {
-                sampleOut.pb(1);
+                sampleOut.push_back(1);
             }
             else
             {
-                sampleOut.pb(0);
+                sampleOut.push_back(0);
             }
         }
-        in.pb(sample);
-        out.pb(sampleOut);
+        in.push_back(sample);
+        out.push_back(sampleOut);
     }
 }
 
@@ -106,7 +106,7 @@ void longestSubstring_ai_is_1
             {
                 a=-1;
             }
-            sample.pb(bit_signature(a, j));
+            sample.push_back(bit_signature(a, j));
         }
         //rev_v(sample);
         int ret = 0, pos = -1, now = 0;
@@ -128,18 +128,18 @@ void longestSubstring_ai_is_1
         }
         for(int j=0; j<numOutputs; j++)
         {
-            //sampleOut.pb(getBit(ret, j));
+            //sampleOut.push_back(getBit(ret, j));
             if(j<=ret)
             {
-                sampleOut.pb(bit_signature(1, j));
+                sampleOut.push_back(bit_signature(1, j));
             }
             else
             {
-                sampleOut.pb(bit_signature(0, j));
+                sampleOut.push_back(bit_signature(0, j));
             }
         }
-        in.pb(sample);
-        out.pb(sampleOut);
+        in.push_back(sample);
+        out.push_back(sampleOut);
     }
 }
 
@@ -174,7 +174,7 @@ void longest_substring_of_two_strings
             {
                 a=-1;
             }
-            sample.pb(a);
+            sample.push_back(a);
         }
         rev_v(sample);
         int ret = 0, pos = -1, now = 0;
@@ -205,18 +205,18 @@ void longest_substring_of_two_strings
         }
         for(int j=0; j<numOutputs; j++)
         {
-            //sampleOut.pb(getBit(ret, j));
+            //sampleOut.push_back(getBit(ret, j));
             if(j<=ret)
             {
-                sampleOut.pb(1);
+                sampleOut.push_back(1);
             }
             else
             {
-                sampleOut.pb(0);
+                sampleOut.push_back(0);
             }
         }
-        in.pb(sample);
-        out.pb(sampleOut);
+        in.push_back(sample);
+        out.push_back(sampleOut);
     }
 }
 
@@ -251,7 +251,7 @@ void longest_substring_double_to_middle
             {
                 a=-1;
             }
-            sample.pb(a);
+            sample.push_back(a);
         }
         rev_v(sample);
         int ret = 0, pos = -1, now = 0;
@@ -278,18 +278,18 @@ void longest_substring_double_to_middle
         }
         for(int j=0; j<numOutputs; j++)
         {
-            //sampleOut.pb(getBit(ret, j));
+            //sampleOut.push_back(getBit(ret, j));
             if(j<=ret)
             {
-                sampleOut.pb(1);
+                sampleOut.push_back(1);
             }
             else
             {
-                sampleOut.pb(0);
+                sampleOut.push_back(0);
             }
         }
-        in.pb(sample);
-        out.pb(sampleOut);
+        in.push_back(sample);
+        out.push_back(sampleOut);
     }
 }
 
@@ -315,22 +315,22 @@ void a_i_is_a_i_plus_one_for_all
             {
                 a=-1;
             }
-            sample.pb(a);
+            sample.push_back(a);
         }
         rev_v(sample);
         for(int j=0; j<numOutputs; j++)
         {
             if(sample[j]==sample[j+1])
             {
-                sampleOut.pb(1);
+                sampleOut.push_back(1);
             }
             else
             {
-                sampleOut.pb(0);
+                sampleOut.push_back(0);
             }
         }
-        in.pb(sample);
-        out.pb(sampleOut);
+        in.push_back(sample);
+        out.push_back(sampleOut);
     }
 }
 
@@ -348,14 +348,14 @@ void input_is_output(int &numInputs, int &numOutputs, int &sampleSize, string &t
         for(int j=0;j<numInputs;j++)
         {
             double x = ((i&(1<<j))!=0);
-            sampleOut.pb(x);
+            sampleOut.push_back(x);
             x -= (x==0);
-            sample.pb(x);
+            sample.push_back(x);
         }
         rev_v(sample);
         rev_v(sampleOut);
-        in.pb(sample);
-        out.pb(sampleOut);
+        in.push_back(sample);
+        out.push_back(sampleOut);
     }
 }
 
@@ -465,14 +465,14 @@ typedef void (*Learneble) (int &numInputs, int &numOutputs, int &sampleSize, str
 
 pair<string, Learneble /**for 0<i<15*/> Functions[8] =
         {
-                //mp("a_i_is_a_i_plus_one_for_all", a_i_is_a_i_plus_one_for_all),
-                //mp("longestSubstring_dai_di_is_0", longestSubstring_dai_di_is_0),
-                mp("longestSubstring_ai_is_1", longestSubstring_ai_is_1),
-                //mp("input_is_output", input_is_output),
-                //mp("vector_loop_language", vector_loop_language),
-                //mp("longest_substring_of_two_strings", longest_substring_of_two_strings),
-                //mp("longest_substring_double_to_middle", longest_substring_double_to_middle),
-                mp("end", nullFunction)
+                //make_pair("a_i_is_a_i_plus_one_for_all", a_i_is_a_i_plus_one_for_all),
+                //make_pair("longestSubstring_dai_di_is_0", longestSubstring_dai_di_is_0),
+                make_pair("longestSubstring_ai_is_1", longestSubstring_ai_is_1),
+                //make_pair("input_is_output", input_is_output),
+                //make_pair("vector_loop_language", vector_loop_language),
+                //make_pair("longest_substring_of_two_strings", longest_substring_of_two_strings),
+                //make_pair("longest_substring_double_to_middle", longest_substring_double_to_middle),
+                make_pair("end", nullFunction)
         };
 
 
@@ -486,16 +486,16 @@ void Data::generateData(int &ret_numInputs, int &ret_numOutputs, string &ret_typ
 
     int functionId = 0;
 
-    while(Functions[functionId].f!="end")
+    while(Functions[functionId].first!="end")
     {
-        if(Functions[functionId].f == type)
+        if(Functions[functionId].first == type)
         {
             vector<vector<bit_signature> > proto_in;
             vector<vector<bit_signature> > proto_out;
             int proto_sample_size;
             int proto_numOutputs;
             int proto_numInputs = ret_numInputs;
-            Functions[functionId].s(proto_numInputs, proto_numOutputs, proto_sample_size, type, proto_in, proto_out);
+            Functions[functionId].second(proto_numInputs, proto_numOutputs, proto_sample_size, type, proto_in, proto_out);
             assert(proto_in.size() == proto_out.size());
             for(int i = 0;i<proto_in.size(); i++)
             {

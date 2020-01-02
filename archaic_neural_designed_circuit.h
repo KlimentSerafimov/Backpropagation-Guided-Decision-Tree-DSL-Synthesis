@@ -12,7 +12,7 @@ class archaic_neural_designed_circuit
 public:
 
 
-    /*int build_circuit_based_on_pairs(int _n, net::parameters param, int (net::*training_f)(Data*, net::parameters))
+    /*int build_circuit_based_on_pairs(int _n, NeuralNetwork::parameters param, int (NeuralNetwork::*training_f)(Data*, NeuralNetwork::parameters))
      {
      Data the_Data;
         //string type = "input_is_output";
@@ -29,10 +29,10 @@ public:
 
         while(1)
         {
-            net the_teacher = net(the_Data.numInputs, the_Data.numOutputs);
+            NeuralNetwork the_teacher = NeuralNetwork(the_Data.numInputs, the_Data.numOutputs);
             the_teacher.train(&the_Data, param, training_f);
 
-            typedef net::data_model::bit_dimension_pair bit_dimension_pair;
+            typedef NeuralNetwork::data_model::bit_dimension_pair bit_dimension_pair;
             vector<bit_dimension_pair> sorted_pairs = the_teacher.the_model.sort_bit_dimension_pairs();
 
             int at = 0;
@@ -47,7 +47,7 @@ public:
                 if(the_Data.apply_new_operator_to_data(new_operator, data_with_best_pair))
                 {
 
-                    net new_teacher = net(data_with_best_pair.numInputs, data_with_best_pair.numOutputs);
+                    NeuralNetwork new_teacher = NeuralNetwork(data_with_best_pair.numInputs, data_with_best_pair.numOutputs);
                     new_teacher.train(&data_with_best_pair, param, training_f);
 
                     int the_bit = new_teacher.the_model.get_worst_dimension();
@@ -73,7 +73,7 @@ public:
 
     }*/
 
-    int build_circuit_based_on_singletons(int _n, net::parameters param, net::PriorityTrainReport (net::*training_f)(Data*, net::parameters))
+    int build_circuit_based_on_singletons(int _n, NeuralNetwork::parameters param, NeuralNetwork::PriorityTrainReport (NeuralNetwork::*training_f)(Data*, NeuralNetwork::parameters))
     {
         Data the_Data;
         //string type = "input_is_output";
@@ -98,7 +98,7 @@ public:
                 };
 
         //cout << the_Data.size() <<endl;
-        net the_teacher = net(inputSize, hiddenLayers, outputSize);
+        NeuralNetwork the_teacher = NeuralNetwork(inputSize, hiddenLayers, outputSize);
         the_teacher.train(&the_Data, param, training_f);
 
         //vector<bit_signature> bits_wanted = the_teacher.the_model.bit_weighted_negative_dimension;
@@ -150,7 +150,7 @@ public:
             {
                 //cout << "insert " << bits_wanted[i].get_sort_by()+bits_wanted[j].get_sort_by() <<endl;
                 bit_signature first_operand = bit_signature(bits_wanted[i].get_sort_by()+bits_wanted[j].get_sort_by(), i, j);
-                best_pairs.push(mp(first_operand, 0));
+                best_pairs.push(make_pair(first_operand, 0));
             }
         }
 
@@ -159,13 +159,13 @@ public:
             pair<bit_signature, int> circuit_data = best_pairs.top();
             best_pairs.pop();
 
-            //Data* the_local_Data = &all_Datas[circuit_data.s];
+            //Data* the_local_Data = &all_Datas[circuit_data.second];
             Data* the_local_Data = &the_Data;
 
-            bit_signature at_pair = circuit_data.f;
+            bit_signature at_pair = circuit_data.first;
 
-            //vector<bit_signature> local_bits_wanted = all_bits_wanted[circuit_data.s];
-            vector<bit_signature> local_bits_wanted = bits_wanted;//all_bits_wanted[circuit_data.s];
+            //vector<bit_signature> local_bits_wanted = all_bits_wanted[circuit_data.second];
+            vector<bit_signature> local_bits_wanted = bits_wanted;//all_bits_wanted[circuit_data.second];
 
             int loc_1 = at_pair.operands[0], loc_2 = at_pair.operands[1];
             operator_signature new_operator = operator_signature((local_bits_wanted[loc_1]>0), (local_bits_wanted[loc_2]>0), local_bits_wanted[loc_1].vector_id, local_bits_wanted[loc_2].vector_id);
@@ -174,7 +174,7 @@ public:
 
             if(the_local_Data->apply_new_operator_to_data(new_operator, data_with_best_pair))
             {
-                net new_teacher = net(data_with_best_pair.numInputs, data_with_best_pair.numOutputs);
+                NeuralNetwork new_teacher = NeuralNetwork(data_with_best_pair.numInputs, data_with_best_pair.numOutputs);
                 new_teacher.train(&data_with_best_pair, param, training_f);
 
                 vector<bit_signature> new_bits_wanted = new_teacher.the_model.dimension_error_ratio_score;
@@ -237,7 +237,7 @@ public:
                             if(new_bits_wanted[i].get_sort_by() > 0 && new_bits_wanted[j].get_sort_by() > 0 )
                             {
                                 bit_signature first_operand = bit_signature(new_bits_wanted[i].get_sort_by()+new_bits_wanted[j].get_sort_by(), i, j);
-                                best_pairs.push(mp(first_operand, -1));
+                                best_pairs.push(make_pair(first_operand, -1));
                             }
                         }
                     }
@@ -247,11 +247,11 @@ public:
         return 1;
     }
 
-    void single_expansion_step(Data the_data, net::parameters param, vector<operator_signature> &operators, set<pair<int, pair<int, int> > > &dp_exists, bool &enter)
+    void single_expansion_step(Data the_data, NeuralNetwork::parameters param, vector<operator_signature> &operators, set<pair<int, pair<int, int> > > &dp_exists, bool &enter)
     {
         int num_in = the_data.numInputs, num_out = the_data.numOutputs;
-        net first_teacher = net(num_in, num_out);
-        first_teacher.train(&the_data, param, &net::softPriorityTrain);
+        NeuralNetwork first_teacher = NeuralNetwork(num_in, num_out);
+        first_teacher.train(&the_data, param, &NeuralNetwork::softPriorityTrain);
 
         vector<vector<bit_signature> > sorted_iouts = first_teacher.the_model.sort_inout_dimensions();
 
@@ -266,7 +266,7 @@ public:
                 for(int k = j+1;k<num_in;k++)
                 {
                     sorted_local_gates.push_back
-                            (mp(sorted_iouts[i][j].value+sorted_iouts[i][k].value, mp(sorted_iouts[i][j].vector_id, sorted_iouts[i][k].vector_id)));
+                            (make_pair(sorted_iouts[i][j].value+sorted_iouts[i][k].value, make_pair(sorted_iouts[i][j].vector_id, sorted_iouts[i][k].vector_id)));
                 }
             }
             sort_v(sorted_local_gates);
@@ -277,15 +277,15 @@ public:
             int width = 10;
             for(int j = 0;j<min((int)sorted_local_gates.size(), width);j++)
             {
-                new_gates.push_back(sorted_local_gates[j].s);
+                new_gates.push_back(sorted_local_gates[j].second);
             }
 
             Data local_data;
             //the_data.apply_dnf_important_pair_dimensions_to_data(new_gates, local_data);
             the_data.apply_dnf_important_pair_dimensions_to_data(new_gates, local_data);
 
-            net second_teacher = net(local_data.numInputs, local_data.numOutputs);
-            second_teacher.train(&local_data, param, &net::softPriorityTrain);
+            NeuralNetwork second_teacher = NeuralNetwork(local_data.numInputs, local_data.numOutputs);
+            second_teacher.train(&local_data, param, &NeuralNetwork::softPriorityTrain);
 
             vector<vector<bit_signature> > single_dimensions = second_teacher.the_model.sort_inout_dimensions();
 
@@ -295,7 +295,7 @@ public:
                 int potential_id = single_dimensions[i][j].vector_id;
                 if(potential_id >= num_in)
                 {
-                    pair<int, pair<int, int> > new_gate = mp(local_data.circuit[potential_id].gate, local_data.circuit[potential_id].operands_to_pair());
+                    pair<int, pair<int, int> > new_gate = make_pair(local_data.circuit[potential_id].gate, local_data.circuit[potential_id].operands_to_pair());
                     if(dp_exists.find(new_gate) == dp_exists.end())
                     {
                         enter = true;
@@ -308,7 +308,7 @@ public:
 
     }
 
-    int build_circuit_per_output_dimension(Data the_data, net::parameters param)
+    int build_circuit_per_output_dimension(Data the_data, NeuralNetwork::parameters param)
     {
         set<pair<int, pair<int, int> > > dp_exists;
         bool enter = true;

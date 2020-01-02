@@ -6,10 +6,11 @@
 #define NEURAL_GUIDED_DECISION_TREE_SYNTHESIS_DP_DECISION_TREE_H
 
 #include "Data.h"
+#include "util.h"
+#include "NeuralNetwork.h"
+#include "DecisionTree.h"
 
-int era_counter = 0;
-
-
+static int era_counter = 0;
 
 struct dp_ret
 {
@@ -20,7 +21,7 @@ struct dp_ret
 
     int h;
 
-    vector<string> dt_strings;
+    vector<string> decision_tree_strings;
     vector<string> if_cpp_format_strings;
     vector<string> if_python_format_strings;
 
@@ -63,7 +64,7 @@ struct dp_ret
     {
         string bracket = "(";
         string name = bracket +
-                      "w=" + to_string(w) +
+                      "weights=" + to_string(w) +
                       " h=" + to_string(h) +
                       mask_to_string() +
                       " num_solutions=" + toDecimalString(num_solutions) +
@@ -81,9 +82,9 @@ struct dp_ret
         mask = -1;
 
         num_solutions = _num_solutions;
-        dt_strings.pb(state_to_string());
-        if_cpp_format_strings.pb("return " + to_string(out) + ";");
-        if_python_format_strings.pb("return " + to_string(out));
+        decision_tree_strings.push_back(state_to_string());
+        if_cpp_format_strings.push_back("return " + to_string(out) + ";");
+        if_python_format_strings.push_back("return " + to_string(out));
     }
 
     void init()
@@ -95,7 +96,7 @@ struct dp_ret
         num_solutions = 0;
         if_cpp_format_strings.clear();
         if_python_format_strings.clear();
-        dt_strings.clear();
+        decision_tree_strings.clear();
     }
 
     dp_ret()
@@ -110,7 +111,7 @@ struct dp_ret
 
         mask_size = left->mask_size;
 
-        bool update_dt_strings = false;
+        bool update_decision_tree_strings = false;
         if(left->w + right->w + 1 < w)
         {
             w = left->w + right->w+1;
@@ -120,8 +121,8 @@ struct dp_ret
             h = max(left->h, right->h)+1;
 
             num_solutions = left->num_solutions*right->num_solutions;
-            update_dt_strings = true;
-            dt_strings.clear();
+            update_decision_tree_strings = true;
+            decision_tree_strings.clear();
 
             children.clear();
             if_cpp_format_strings.clear();
@@ -132,31 +133,31 @@ struct dp_ret
         else if(left->w + right->w + 1 == w)
         {
             num_solutions += left->num_solutions*right->num_solutions;
-            update_dt_strings = true;
+            update_decision_tree_strings = true;
 
             assert(num_solutions < (1<<15));
         }
 
-        if(update_dt_strings)
+        if(update_decision_tree_strings)
         {
 
             assert(if_python_format_strings.size() == if_cpp_format_strings.size());
-            assert(dt_strings.size() == if_cpp_format_strings.size());
-            assert(left->dt_strings.size() == left->if_cpp_format_strings.size());
-            assert(right->dt_strings.size() == right->if_cpp_format_strings.size());
-            for(int i = 0; i < left->dt_strings.size(); i++)
+            assert(decision_tree_strings.size() == if_cpp_format_strings.size());
+            assert(left->decision_tree_strings.size() == left->if_cpp_format_strings.size());
+            assert(right->decision_tree_strings.size() == right->if_cpp_format_strings.size());
+            for(int i = 0; i < left->decision_tree_strings.size(); i++)
             {
-                for(int j = 0; j < right->dt_strings.size(); j++)
+                for(int j = 0; j < right->decision_tree_strings.size(); j++)
                 {
                     string bracket = "(";
                     string name = bracket +
                                   "state="+
                                   state_to_string()+
-                                  " left=" + left->dt_strings[i] +
-                                  " right=" + right->dt_strings[j] +
+                                  " left=" + left->decision_tree_strings[i] +
+                                  " right=" + right->decision_tree_strings[j] +
                                   ")";
                     //cout << name << endl;
-                    dt_strings.pb(name);
+                    decision_tree_strings.push_back(name);
 
                     string if_cpp_format_str =
                             "if(x["+to_string(_input_id)+ "]){" +
@@ -166,12 +167,12 @@ struct dp_ret
                             "if x["+to_string(_input_id)+ "] == 1:{" +
                             left->if_python_format_strings[i] + "}else:{" + right->if_python_format_strings[j] + "}";
 
-                    if_cpp_format_strings.pb(if_cpp_format_str);
-                    if_python_format_strings.pb(if_python_format_str);
+                    if_cpp_format_strings.push_back(if_cpp_format_str);
+                    if_python_format_strings.push_back(if_python_format_str);
                 }
             }
 
-            children.pb(mp(_input_id, mp(left, right)));
+            children.push_back(make_pair(_input_id, make_pair(left, right)));
         }
         /*if(max(left->h, right->h)+1 < h)
         {
@@ -191,9 +192,9 @@ struct dp_ret
 //                int *dp_num_solutions
 //        )
 //        {
-//            if(w<dp_w[mask])
+//            if(weights<dp_w[mask])
 //            {
-//                dp_w[mask] = w;
+//                dp_w[mask] = weights;
 //                dp_w_root[mask] = w_root;
 //
 //                dp_h[mask] = h;
@@ -209,15 +210,15 @@ struct dp_ret
 //        }
     string print()
     {
-        string ret = "w = " + to_string(w) + " h = "+ to_string(h);
+        string ret = "weights = " + to_string(w) + " h = "+ to_string(h);
         return ret;
     }
 };
 
-dp_ret dp_data[1<<16];
+static dp_ret dp_data[1<<16];
 
 template<typename datatype>
-class dp_decision_tree
+class DecisionTreeSynthesisViaDP
 {
 public:
 
@@ -231,7 +232,7 @@ public:
 //
 //    int dp_num_solutions[(1<<16)];
 
-    dp_decision_tree()
+    DecisionTreeSynthesisViaDP()
     {
 
     }
@@ -314,7 +315,7 @@ public:
                 {
                     for(int j = i+1;j<active_nodes.size(); j++)
                     {
-                        active_pairs.push_back(mp(active_nodes[i], active_nodes[j]));
+                        active_pairs.push_back(make_pair(active_nodes[i], active_nodes[j]));
                     }
                 }
 
@@ -377,7 +378,7 @@ public:
     }
 
     DecisionTreeScore synthesize_decision_tree_and_get_size
-            (net::parameters param, int n, datatype the_data, DecisionTreeSynthesiserType synthesizer_type)
+            (NeuralNetwork::parameters param, int n, datatype the_data, DecisionTreeSynthesiserType synthesizer_type)
     {
         DecisionTreeScore ret = DecisionTreeScore();
 
@@ -393,7 +394,7 @@ public:
 
                 ret.size = opt->w;
                 ret.num_solutions = opt->num_solutions;
-                ret.dt_strings = opt->dt_strings;
+                ret.decision_tree_strings = opt->decision_tree_strings;
                 ret.if_cpp_format_strings = opt->if_cpp_format_strings;
                 ret.if_python_format_strings = opt->if_python_format_strings;
             }
@@ -406,7 +407,7 @@ public:
         else
         {
             param.decision_tree_synthesiser_type = synthesizer_type;
-            decision_tree extracted_tree = decision_tree(&the_data, param);
+            DecisionTree extracted_tree = DecisionTree(&the_data, param);
             //extracted_tree.print_gate(0);
             ret.size = extracted_tree.size;
         }
@@ -414,15 +415,15 @@ public:
     }
 
 
-    /*DecisionTreeScore old_extract_decision_tree_and_compare_with_opt_and_entropy(net::parameters param, int n, Data the_data)
+    /*DecisionTreeScore old_extract_decision_tree_and_compare_with_opt_and_entropy(NeuralNetwork::parameters param, int n, Data the_data)
 
     {
         param.decision_tree_synthesiser_type = confusion_guided;
-        decision_tree confusion_extracted_tree = decision_tree(&the_data, param);
+        DecisionTree confusion_extracted_tree = DecisionTree(&the_data, param);
         int confusion_guided_size = confusion_extracted_tree.size;
 
         param.decision_tree_synthesiser_type = entropy_guided;
-        decision_tree entropy_based_tree = decision_tree(&the_data, param);
+        DecisionTree entropy_based_tree = DecisionTree(&the_data, param);
         int entropy_guided_size = entropy_based_tree.size;
 
         DecisionTreeScore ret;
@@ -431,7 +432,7 @@ public:
         if(n <= 4)
         {
             opt = rek(n, &the_data, (1<<(1<<n))-1);
-            ret.set_opt(opt.w);
+            ret.set_opt(opt.weights);
         }
 
         ret.neural_guided_size = confusion_guided_size;
@@ -440,18 +441,18 @@ public:
         return ret;
     }
 
-    DecisionTreeScore new_extract_decision_tree_and_compare_with_opt_and_entropy(net::parameters param, int n, Data the_data)
+    DecisionTreeScore new_extract_decision_tree_and_compare_with_opt_and_entropy(NeuralNetwork::parameters param, int n, Data the_data)
     {
         memset(vis, 0, sizeof(vis));
         memset(dp_w, 63, sizeof(dp_w));
         memset(dp_h, 63, sizeof(dp_h));
 
         param.decision_tree_synthesiser_type = neural_guided;
-        decision_tree neurally_extracted_tree = decision_tree(&the_data, param);
+        DecisionTree neurally_extracted_tree = DecisionTree(&the_data, param);
         int neural_guided_size = neurally_extracted_tree.size;
 
         param.decision_tree_synthesiser_type = entropy_guided;
-        decision_tree entropy_based_tree = decision_tree(&the_data, param);
+        DecisionTree entropy_based_tree = DecisionTree(&the_data, param);
         int entropy_guided_size = entropy_based_tree.size;
 
         DecisionTreeScore ret;
@@ -460,7 +461,7 @@ public:
         if(n <= 4)
         {
             opt = rek(n, &the_data, (1<<(1<<n))-1);
-            ret.set_opt(opt.w);
+            ret.set_opt(opt.weights);
         }
         ret.neural_guided_size = neural_guided_size;
         ret.entropy_guided_size = entropy_guided_size;
@@ -486,22 +487,23 @@ public:
         int id_iter_count = 8;//8;
         int id_ensamble_size = 10;
 
-        net::parameters param = net::parameters(1, 1);
+        NeuralNetwork::parameters param = NeuralNetwork::parameters(1, 1);
         param.set_number_resets(1);
         param.num_stale_iterations = 10000;
         param.set_iteration_count(id_iter_count);
         param.ensamble_size = id_ensamble_size;
-        param.priority_train_f = &net::softPriorityTrain;//&net::harderPriorityTrain;
+        param.priority_train_f = &NeuralNetwork::softPriorityTrain;//&NeuralNetwork::harderPriorityTrain;
         param.first_layer = 2*n;
         param.ensamble_size = 1;
+        param.decision_tree_synthesiser_type = confusion_guided;
 
         //try to pick dimension that maximizes confusion differnece between the two segments;
 
         int heuristic_ret = 100;
-        decision_tree best_tree = decision_tree();
+        DecisionTree best_tree = DecisionTree();
         for(int i = 1;i<=1;i++)
         {
-            decision_tree tree = decision_tree(&the_data, param);
+            DecisionTree tree = DecisionTree(&the_data, param);
             if(tree.size<heuristic_ret)
             {
                 best_tree = tree;
@@ -614,5 +616,7 @@ public:
         cout << "correct = " << sum_train_iter_correct <<"/"<<sum_train_iter <<endl;
     }
 };
+
+DecisionTreeScore _get_opt_decision_tree_score(int n, int func);
 
 #endif //NEURAL_GUIDED_DECISION_TREE_SYNTHESIS_DP_DECISION_TREE_H

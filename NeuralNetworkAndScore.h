@@ -6,9 +6,9 @@
 #define NEURAL_GUIDED_DECISION_TREE_SYNTHESIS_NET_AND_SCORE_H
 
 #include "Header.h"
-#include "net.h"
+#include "NeuralNetwork.h"
 
-class net_and_score: public net
+class NeuralNetworkAndScore: public NeuralNetwork
 {
 public:
 
@@ -83,23 +83,23 @@ public:
         return max_error;
     }
 
-    void set_individual_scores(vector<net_and_score> individual_scores)
+    void set_individual_scores(vector<NeuralNetworkAndScore> individual_scores)
     {
         assert(individual_max_errors.size() == 0);
         for(int i = 0;i<individual_scores.size();i++)
         {
-            individual_max_errors.pb(individual_scores[i].max_error);
-            tarjans.pb(individual_scores[i].tarjan);
+            individual_max_errors.push_back(individual_scores[i].max_error);
+            tarjans.push_back(individual_scores[i].tarjan);
         }
     }
 
-    net_and_score()
+    NeuralNetworkAndScore()
     {
 
     }
 
 
-    net_and_score(net self): net(self)
+    NeuralNetworkAndScore(NeuralNetwork self): NeuralNetwork(self)
     {
 
     }
@@ -139,7 +139,7 @@ public:
         }
     }
 
-    bool operator < (net_and_score &other) const
+    bool operator < (NeuralNetworkAndScore &other) const
     {
         if(is_init_score)
         {
@@ -203,7 +203,7 @@ public:
 
 class non_dominating_score_boundary
 {
-    vector<net_and_score> boundary;
+    vector<NeuralNetworkAndScore> boundary;
 
     bool is_max_boundary_size_set = false;
     int max_boundary_size;
@@ -216,10 +216,10 @@ public:
         max_boundary_size = _max_boundary_size;
     }
 
-    bool update(net_and_score to_insert)
+    bool update(NeuralNetworkAndScore to_insert)
     {
 
-        vector<net_and_score> new_boundary;
+        vector<NeuralNetworkAndScore> new_boundary;
         for(int i = 0; i < boundary.size();i++)
         {
             if(
@@ -245,14 +245,14 @@ public:
             }
             else
             {
-                new_boundary.pb(boundary[i]);
+                new_boundary.push_back(boundary[i]);
             }
         }
 
 
         //cout << "to_insert is non-dominated" <<endl;
 
-        new_boundary.pb(to_insert);
+        new_boundary.push_back(to_insert);
 
         boundary = new_boundary;
 
@@ -264,40 +264,40 @@ public:
             for(int i = 0;i<boundary.size();i++)
             {
                 vector<double> values;
-                values.pb(boundary[i].max_error);
-                values.pb(boundary[i].sum_error);
-                values.pb(boundary[i].max_unit_ordering_error);
-                values.pb(boundary[i].sum_ordering_error);
+                values.push_back(boundary[i].max_error);
+                values.push_back(boundary[i].sum_error);
+                values.push_back(boundary[i].max_unit_ordering_error);
+                values.push_back(boundary[i].sum_ordering_error);
                 if(i == 0) {
                     for (int j = 0; j < values.size(); j++) {
-                        best.pb(mp(values[j], i));
+                        best.push_back(make_pair(values[j], i));
                     }
                 }
                 else
                 {
                     for (int j = 0; j < values.size(); j++) {
-                        best[j] = min(best[j], mp(values[j], i));
+                        best[j] = min(best[j], make_pair(values[j], i));
                     }
                 }
             }
 
-            pair<pair<int, int>, int> worst = mp(mp(-1, -1), 0);
+            pair<pair<int, int>, int> worst = make_pair(make_pair(-1, -1), 0);
             for(int i = 0;i<boundary.size();i++)
             {
                 bool in_best = false;
                 for(int j = 0;j<best.size() && !in_best;j++)
                 {
-                    if(i == best[j].s)
+                    if(i == best[j].second)
                     {
                         in_best = true;
                     }
                 }
                 if(!in_best) {
-                    worst = max(worst, mp(mp(boundary[i].sum_ordering_error, boundary[i].max_unit_ordering_error), i));
+                    worst = max(worst, make_pair(make_pair(boundary[i].sum_ordering_error, boundary[i].max_unit_ordering_error), i));
                 }
             }
-            if(worst.f.f != -1) {
-                boundary.erase(boundary.begin() + worst.s);
+            if(worst.first.first != -1) {
+                boundary.erase(boundary.begin() + worst.second);
             } else{
                 break;
             }
@@ -306,7 +306,7 @@ public:
         return true;
     }
 
-    net_and_score query()
+    NeuralNetworkAndScore query()
     {
         return boundary[rand(0, boundary.size()-1)];
     }
@@ -323,11 +323,11 @@ public:
     }
 };
 
-class meta_net_and_score: public net_and_score
+class meta_net_and_score: public NeuralNetworkAndScore
 {
 public:
 
-    meta_net_and_score(net_and_score self): net_and_score(self)
+    meta_net_and_score(NeuralNetworkAndScore self): NeuralNetworkAndScore(self)
     {
 
     }

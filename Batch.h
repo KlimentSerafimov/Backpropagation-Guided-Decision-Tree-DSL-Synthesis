@@ -38,7 +38,7 @@ public:
     }
 };
 
-class batch //ids
+class Batch //ids
 {
 public:
     

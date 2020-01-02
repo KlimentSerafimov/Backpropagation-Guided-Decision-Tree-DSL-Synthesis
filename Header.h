@@ -36,12 +36,7 @@
 #include <algorithm>
 
 #define P push
-#define f first
-#define s second
-#define pb push_back
-#define mp make_pair
 #define rand(a, b) ((rand()%(b-a+1))+a)
-#define MEM(a, b) memset(a, b, sizeof(a))
 #define sort_v(a) sort(a.begin(), a.end())
 #define rev_v(a)  reverse(a.begin(), a.end())
 

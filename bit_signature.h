@@ -2,11 +2,10 @@
 // Created by Kliment Serafimov on 2019-02-16.
 //
 
-#include "Header.h"
-
 #ifndef NEURAL_GUIDED_DECISION_TREE_SYNTHESIS_BIT_SIGNATURE_H
 #define NEURAL_GUIDED_DECISION_TREE_SYNTHESIS_BIT_SIGNATURE_H
 
+#include "Header.h"
 
 class bit_signature
 {
