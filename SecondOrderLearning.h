@@ -49,7 +49,7 @@ public:
         meta_net_and_score best_solution;
 
         meta_net_and_score SA_iter_best_solution = best_solution = at_walking_solution =
-                evaluate_meta_learner(global_best_solution, f_data, false, root_iter, params);
+                evaluate_meta_learner(global_best_solution, f_data, true, root_iter, params);
 
         if(best_solution < global_best_solution)
         {
@@ -71,7 +71,7 @@ public:
                 {
                     k_iter--;
                 }
-                at_walking_solution = evaluate_meta_learner(SA_iter_best_solution, f_data, false, root_iter, params);
+                at_walking_solution = evaluate_meta_learner(SA_iter_best_solution, f_data, true, root_iter, params);
             }
             cout << "NEW k_iter = " << k_iter <<"; NEW treshold = " << treshold << endl;
 

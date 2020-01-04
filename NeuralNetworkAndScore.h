@@ -210,6 +210,11 @@ class non_dominating_score_boundary
 
 public:
 
+    int size()
+    {
+        return boundary.size();
+    }
+
     void set_max_boundary_size(int _max_boundary_size)
     {
         is_max_boundary_size_set = true;
@@ -264,9 +269,9 @@ public:
             for(int i = 0;i<boundary.size();i++)
             {
                 vector<double> values;
-                values.push_back(boundary[i].max_error);
-                values.push_back(boundary[i].sum_error);
-                values.push_back(boundary[i].max_unit_ordering_error);
+//                values.push_back(boundary[i].max_error);
+//                values.push_back(boundary[i].sum_error);
+//                values.push_back(boundary[i].max_unit_ordering_error);
                 values.push_back(boundary[i].sum_ordering_error);
                 if(i == 0) {
                     for (int j = 0; j < values.size(); j++) {
@@ -302,6 +307,8 @@ public:
                 break;
             }
         }
+
+        assert(boundary.size() <= max_boundary_size);
 
         return true;
     }

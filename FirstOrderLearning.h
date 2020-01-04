@@ -692,7 +692,8 @@ public:
             NeuralNetworkAndScore global_best_solution,
             vector<datatype> f_data,
             learning_parameters init_param,
-            bool print)
+            bool print,
+            bool minimal_print)
     {
         learning_parameters learning_param = init_param;
 
@@ -728,13 +729,17 @@ public:
             print_stats(epsilon, temperature, 0, k_iter, at_walking_solution, global_best_solution,
                         boundary, local_policy, f_data);
         }
+        else if(minimal_print)
+        {
+            boundary.print();
+        }
 
         for (int iter = 1;
                 iter <= max_num_iter &&
                 epsilon >=learning_param.end_epsilon;
                 iter++) {
 
-            if(print)
+            if(print || minimal_print)
             {
                 cout << iter << " / " << max_num_iter << endl;
             }
@@ -746,6 +751,7 @@ public:
             //at_walking_solution = boundary.query();
 
             NeuralNetworkAndScore try_solution = at_walking_solution;
+
 
             reptile_step_vary_epsilon(try_solution, f_data, k_iter, local_policy, epsilon,
                                      learning_param.choosePriorityTrain);
@@ -759,6 +765,8 @@ public:
 
             bool pushed_boundary = boundary.update(try_score);
 
+            assert(boundary.size() == 1);
+
             if (pushed_boundary || try_score < at_walking_solution) {
                 at_walking_solution = try_score;
 
@@ -766,9 +774,15 @@ public:
                     global_best_solution = at_walking_solution;
                 }
 
-                if(pushed_boundary && print) {
-                    print_stats(epsilon, temperature, iter, k_iter, at_walking_solution, global_best_solution,
+                if(pushed_boundary ) {
+                    if(print)
+                        print_stats(epsilon, temperature, iter, k_iter, at_walking_solution, global_best_solution,
                                 boundary, local_policy, f_data);
+                    else if(minimal_print)
+                        {
+                            boundary.print();
+                        }
+
                 }
 
             }

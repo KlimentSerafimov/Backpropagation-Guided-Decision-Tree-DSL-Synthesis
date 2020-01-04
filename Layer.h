@@ -138,12 +138,12 @@ public:
         neurons.push_back(new_neuron);
         return ret_id;
     }
-    vector<bit_signature> * output(vector<bit_signature> *input, bool remember)
+    vector<bit_signature> output(vector<bit_signature> *input, bool remember)
     {
-        vector<bit_signature>* layerOutput = new vector<bit_signature>();
+        vector<bit_signature> layerOutput = vector<bit_signature>();
         for(int i=0; i<num; i++)
         {
-            layerOutput->push_back(neurons[i].output(input, remember));
+            layerOutput.push_back(neurons[i].output(input, remember));
         }
         return layerOutput;
     }

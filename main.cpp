@@ -18,627 +18,13 @@
 #include "SecondOrderLearning.h"
 #include "FunctionAndDecisionTreeScore.h"
 #include "print_all_decision_tree_strings.h"
-
 #include "archaic_neural_designed_circuit.h"
+#include "dataset_initializers.h"
+#include "BitvectorFunctionSolver.h"
 
 ofstream fout("table.out");
 
 ofstream fout_experiment("experiment.out");
-
-FirstOrderDataset<DataAndDecisionTreeScore> init_random_test_set(int n)
-{
-    FirstOrderDataset<DataAndDecisionTreeScore> ret;
-    int test_num_samples = 64;
-
-    vector<FunctionAndDecisionTreeScore> sample_ids;
-
-    ///VVVVVV THIS
-
-    //WHAT IS THE SMALLES TRAINING SET OF ({0, 1}^4 -> {0, 1}) -> {2x+1 | 0 <= x <= 8}
-    //s.t opt decision tree on function {0, 1}^4 -> {0, 1} generalizes to total opt.
-    //What types of function? LET U_2^2^2^2 = {0, 1}^4 -> {0, 1}
-    //{f-> 1_[if (DT_opt(f) == x)] where \forall f \in U_2^2^2^2  }_x \in {2x+1 | 0 <= x <= 8}
-    //{f-> 1_[if (DT_opt(f) <= x)] where \forall f \in U_2^2^2^2  }_x \in {2x+1 | 0 <= x <= 8}
-    //{f-> 1_[if (((DT_opt(f)-1) >> x)%2 == 0)] where \forall f \in U_2^2^2^2  }_x \in {1, 2, 3}
-    //U_2^2^U_2^2^2^2 = {{0, 1}^4 -> {0, 1}} -> {0, 1}
-
-    //Model the curriculum with functions from U_2^2^U_2^2^2^2
-    //for train curriculum one tree tree
-    //for test curriculum another tree
-    // .. other test curriculums
-    //Describe model that goes from one curriculum to another.
-    //Search over this space with NN initializations that generate according optimal f\in U_2^2^2^2 DT_neural_error = DT_opt
-    //without training on all of them.
-
-    //Amphibian synthesis
-
-
-    //(2^2^16) functions with 16 bit input
-    //
-
-    ///^^^^^^^^^^^^THIS Came from the fact that
-
-
-    for(int i = 0; i < test_num_samples;i++)
-    {
-        long long first = (long long)rand(0, (1<<31)) << 31;
-        long long second = rand(0, (1 << 31));
-
-        long long sample_id = (first + second);
-
-        //cout << first << " " << second << " "<< sample_id << endl;
-        sample_ids.push_back(FunctionAndDecisionTreeScore(sample_id, get_opt_decision_tree_score(n, sample_id)));
-    }
-
-    //test
-
-    for(int i = 0;i<test_num_samples;i++)
-    {
-        DataAndDecisionTreeScore new_data(sample_ids[i]);
-        new_data.init_exaustive_table_with_unary_output(n, sample_ids[i].function);
-        ret.test_data.push_back(new_data);
-    }
-
-    cout << ret.print(0) << endl;
-
-    return ret;
-}
-
-FirstOrderDataset<DataAndDecisionTreeScore> init_custom_data_and_difficulty_set(int n, double training_set_percent, double testing_set_percent)
-{
-    assert(n<=3);
-    FirstOrderDataset<DataAndDecisionTreeScore> ret;
-
-    //int train_num_samples; //defined later
-    int test_num_samples = (1<<(1<<n));
-
-
-
-
-    vector<FunctionAndDecisionTreeScore> sample_ids = get_smallest_f(n);
-
-    if(n == 3) {
-
-        srand(0);
-
-        for (int i = 0; i < sample_ids.size(); i++) {
-            if (sample_ids[i].size < 7) {
-                DataAndDecisionTreeScore new_data(sample_ids[i]);
-                new_data.init_exaustive_table_with_unary_output(n, sample_ids[i].function);
-
-                if (rand(0, 100) < testing_set_percent) {
-                    ret.test_data.push_back(new_data);
-                } else {
-                    if (rand(0, 100) < training_set_percent) {
-                        ret.train_data.push_back(new_data);
-                    }
-                }
-            }
-        }
-
-
-        if (true) {
-            int original_seed = 0;
-            for (int i = 0; i < 8; i++) {
-                int seed = original_seed;
-                if ((seed & (1 << i)) != 0) {
-                    seed -= (1 << i);
-                } else {
-                    seed |= (1 << i);
-                }
-
-                DataAndDecisionTreeScore new_1_data(sample_ids[seed]);
-                {
-                    new_1_data.init_exaustive_table_with_unary_output(n, sample_ids[seed].function);
-
-                    if (false) {
-                        if (rand(0, 100) < testing_set_percent) {
-                            ret.test_data.push_back(new_1_data);
-                        } else {
-                            if (rand(0, 100) < training_set_percent) {
-                                ret.train_data.push_back(new_1_data);
-                            }
-                        }
-                    }
-                }
-                int local_seed = seed;
-                for (int j = i + 1; j < 8; j++) {
-                    seed = local_seed;
-                    if ((seed & (1 << j)) != 0) {
-                        seed -= (1 << j);
-                    } else {
-                        seed |= (1 << j);
-                    }
-                    DataAndDecisionTreeScore new_2_data(sample_ids[seed]);
-                    if (new_2_data.score.size >= 9) {
-                        new_2_data.init_exaustive_table_with_unary_output(n, sample_ids[seed].function);
-
-                        if (false) {
-                            if (rand(0, 100) < testing_set_percent) {
-                                ret.test_data.push_back(new_2_data);
-                            } else {
-                                if (rand(0, 100) < training_set_percent) {
-                                    ret.train_data.push_back(new_2_data);
-                                }
-                            }
-                        }
-                    }
-                    int local_local_seed = seed;
-                    for (int k = j + 1; k < 8; k++) {
-                        seed = local_local_seed;
-                        if ((seed & (1 << k)) != 0) {
-                            seed -= (1 << k);
-                        } else {
-                            seed |= (1 << k);
-                        }
-                        DataAndDecisionTreeScore new_3_data(sample_ids[seed]);
-                        if (sample_ids[seed].size == 7) {
-                            if (true) {
-                                new_3_data.init_exaustive_table_with_unary_output(n, sample_ids[seed].function);
-
-                                if (rand(0, 100) < testing_set_percent) {
-                                    ret.test_data.push_back(new_3_data);
-                                } else {
-                                    if (rand(0, 100) < training_set_percent) {
-                                        ret.train_data.push_back(new_3_data);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    //train
-    if(n <= 2) {
-
-        for (int i = 0; i < sample_ids.size(); i++) {
-            int size = sample_ids[i].size;
-            if
-                    (n <= 2 ||
-                     (
-                             n == 3 && (size <= 3
-                                        || (size == 5 && rand(0, 100) < 20) || (size == 7 && rand(0, 100) < 7)
-                                        || (size == 9 && rand(0, 100) < 7) || (size == 11 && rand(0, 100) < 16)
-                                        || (size == 13 && rand(0, 100) < 30) || (size == 15))
-                     ) ||
-                     (n == 4 && (size <= 12))
-                    )// || size >= 15 || rand(0, 256) < 24)))
-            {
-                DataAndDecisionTreeScore new_data(sample_ids[i]);
-                new_data.init_exaustive_table_with_unary_output(n, sample_ids[i].function);
-                ret.train_data.push_back(new_data);
-            }
-
-            /*
-            if
-                    (n <= 2 ||
-                     (
-                             n == 3 && (size <= 3
-                                        || (size == 5 && rand(0, 100) < 3400) || (size == 7 && rand(0, 100) < 10)
-                                        || (size == 9 && rand(0, 100) < 10) || (size == 11 && rand(0, 100) < 10)
-                                        || (size == 13 && rand(0, 100) < 20) || (size == 15))
-                     ) ||
-                     (n == 4 && (size <= 12))
-                    )// || size >= 15 || rand(0, 256) < 24)))
-            {
-                DataAndDecisionTreeScore new_data(sample_ids[i]);
-                new_data.init_exaustive_table_with_unary_output(n, sample_ids[i].f);
-                ret.test_data.push_back(new_data);
-            }
-            */
-        }
-        sample_ids.clear();
-
-        sample_ids = get_smallest_f(n);
-
-        //test
-
-        for(int i = 0;i<test_num_samples;i++)
-        {
-            DataAndDecisionTreeScore new_data(sample_ids[i]);
-            new_data.init_exaustive_table_with_unary_output(n, sample_ids[i].function);
-            ret.test_data.push_back(new_data);
-        }
-    }
-
-
-
-
-    cout << ret.print(0) << endl;
-
-    return ret;
-}
-
-/*
-FirstOrderDataset<DataAndDecisionTreeScore> init_smallest_train_set(int n)
-{
-    FirstOrderDataset<DataAndDecisionTreeScore> ret;
-    ret.n = n;
-    //train
-    vector<int> function_ids ;
-
-    int train_num_samples = 256;
-    int test_num_samples = (1<<(1<<n));
-
-    vector<FunctionAndDecisionTreeScore> sample_ids = get_smallest_f(n, train_num_samples);
-
-    //sample_ids.push_back(0);
-    //sample_ids.push_back((1<<(1<<n))-1);
-
-    //train
-    for (int i = 0; i < train_num_samples; i++)
-    {
-        DataAndDecisionTreeScore new_data(sample_ids[i].size, sample_ids[i].num_solutions);
-        new_data.init_exaustive_table_with_unary_output(n, sample_ids[i].f);
-        ret.train_data.push_back(new_data);
-    }
-
-    sample_ids.clear();
-
-    if(n<=4)
-    {
-        sample_ids = get_smallest_f(n, test_num_samples);
-    }
-    else if(n<=6)
-    {
-        test_num_samples = 200;
-        for(int i = 0; i < max(train_num_samples, test_num_samples);i++)
-        {
-            long long first = (long long)rand(0, (1<<31)) << 31;
-            long long second = rand(0, (1 << 31));
-
-            long long sample_id = (first + second);
-
-            //cout << first << " " << second << " "<< sample_id << endl;
-            sample_ids.push_back(FunctionAndDecisionTreeScore(sample_id, get_opt_decision_tree_score(n, sample_id)));
-        }
-    }
-    else
-    {
-        assert(0);
-    }
-
-    //test
-
-    for(int i = 0;i<test_num_samples;i++)
-    {
-        DataAndDecisionTreeScore new_data(sample_ids[i].size, sample_ids[i].num_solutions);
-        new_data.init_exaustive_table_with_unary_output(n, sample_ids[i].f);
-        ret.test_data.push_back(new_data);
-    }
-
-    ret.print();
-
-    return ret;
-}
-*/
-
-void init_exaustive_table_with_unary_output(Data &f_data, int n, int f_id)
-{
-    f_data.init_exaustive_table_with_unary_output(n, f_id);
-}
-
-void init_exaustive_table_with_unary_output(DataAndDecisionTreeScore &f_data, int n, int f_id)
-{
-    f_data.init_exaustive_table_with_unary_output(n, f_id);
-
-    DecisionTreeSynthesisViaDP<Data> decision_tree_solver;
-    NeuralNetwork::parameters cutoff_parametes;
-    DecisionTreeScore size_opt = decision_tree_solver.synthesize_decision_tree_and_get_size
-            (cutoff_parametes, n, f_data, optimal);
-
-    f_data.score = size_opt;
-}
-
-
-template<typename DataType>
-FirstOrderDataset<DataType> initFirstOrderDatasets(int n, int train_num_samples, int test_num_samples)
-{
-    FirstOrderDataset<DataType> ret;
-
-    vector<long long> sample_ids;
-
-    //common
-    if(n<=4) {
-
-        for (int i = 0; i < (1 << (1 << n)); i++) {
-            sample_ids.push_back(i);
-        }
-
-        //shuffle(sample_ids.begin(), sample_ids.end(), std::default_random_engine(0));
-
-    }
-    else if(n<=6)
-    {
-        for(int i = 0; i < test_num_samples;i++)
-        {
-            long long first = (long long)rand(0, (1<<31)) << 31;
-            long long second = rand(0, (1 << 31));
-
-            long long sample_id = (first + second);
-
-            //cout << first << " " << second << " "<< sample_id << endl;
-            sample_ids.push_back(sample_id);
-        }
-    }
-    else
-    {
-        assert(0);
-    }
-
-    //train
-    for (int i = 0; i < train_num_samples; i++) {
-
-        DataType next_f;
-
-        init_exaustive_table_with_unary_output(next_f, n, sample_ids[i]);
-
-        ret.train_data.push_back(next_f);
-    }
-
-    //test
-
-    for(int i = 0;i<test_num_samples;i++)
-    {
-        DataType next_f;
-
-        init_exaustive_table_with_unary_output(next_f, n, sample_ids[i]);
-
-        ret.test_data.push_back(next_f);
-    }
-
-    return ret;
-}
-
-template<typename DataType>
-FirstOrderDataset<DataType> completeFirstOrderTestDataset(int n)
-{
-    return initFirstOrderDatasets<DataType>(n, 0, (1<<(1<<n)));
-}
-
-vector<vector<Data> > initSecondOrderDataset(vector<Data> data, int subDataset_size)
-{
-    vector<vector<Data> > ret;
-    for(int i = 0, meta_data_id = 0;i<data.size();meta_data_id++) {
-        ret.push_back(vector<Data>());
-        for (int k = 0; k < subDataset_size && i < data.size(); i++, k++) {
-            ret[meta_data_id].push_back(data[i]);
-        }
-    }
-    return ret;
-}
-
-SecondOrderDataset<Data> initSecondOrderDatasets(FirstOrderDataset<Data> data)
-{
-    SecondOrderDataset<Data> ret;
-    int subDataset_size = 2;
-    ret.train_meta_data = initSecondOrderDataset(data.train_data, subDataset_size);
-    ret.test_meta_data = initSecondOrderDataset(data.test_data, subDataset_size);
-
-    return ret;
-}
-
-template<typename DataType>
-int get_swap_count(vector<DataType> f_data, NeuralNetwork the_net, int leaf_iter)
-{
-
-    Policy policy(f_data, false);
-    FirstOrderLearning<DataType> learning_algorighm = FirstOrderLearning<DataType>();
-
-    typename FirstOrderLearning<DataType>::evaluate_learner_parameters params;
-    params.iter_cutoff = leaf_iter;
-    params.threshold = 0.01;
-
-    NeuralNetworkAndScore score =
-            learning_algorighm.evaluate_learner
-                    (the_net, f_data, false, params, &NeuralNetwork::softPriorityTrain);
-
-    return policy.get_swap_count(&score);
-
-}
-
-template<typename DataType>
-class bitvectorFunctionSolver: public SecondOrderLearning<DataType>
-{
-    typedef SecondOrderLearning<DataType> base;
-public:
-    int root_iter = 60, leaf_iter = 60;
-
-    bitvectorFunctionSolver(int _leaf_iter): SecondOrderLearning<DataType>()
-    {
-        assert(_leaf_iter >= 1);
-        leaf_iter = _leaf_iter;
-    }
-
-    FirstOrderDataset<DataType> first_order_data;
-    SecondOrderDataset<DataType> meta_data;
-
-    bool first_order_data_inited = false;
-    bool meta_data_inited = false;
-
-    void initFirstOrderData(int n, FirstOrderDataset<DataType> _first_order_data)
-    {
-        first_order_data = _first_order_data;
-        first_order_data_inited = true;
-    }
-
-    void initMetaData(int n, FirstOrderDataset<DataType> _first_order_data)
-    {
-
-
-        first_order_data = _first_order_data;
-        first_order_data_inited = true;
-
-        meta_data = initSecondOrderDatasets(first_order_data);
-
-        meta_data_inited = true;
-    }
-
-    const double treshold = 0.4;
-    double min_treshold = treshold/3;
-
-    NeuralNetworkAndScore train_to_order_neural_errors
-            (int n, NeuralNetworkAndScore learner, typename FirstOrderLearning<DataType>::learning_parameters param, bool print)
-    {
-        assert(first_order_data_inited);
-
-        base::order_neural_errors(learner, first_order_data.train_data, param, print);
-
-        return learner;
-    }
-
-    NeuralNetworkAndScore train_to_learn(int n, typename FirstOrderLearning<DataType>::learning_parameters param, bool print)
-    {
-        assert(first_order_data_inited);
-
-        srand(time(0));
-        NeuralNetworkAndScore learner = NeuralNetworkAndScore(NeuralNetwork(n, 2*n, 1));
-
-        return train_to_learn(n, learner, param, print);
-    }
-
-    NeuralNetworkAndScore train_to_learn(int n, NeuralNetworkAndScore learner, typename FirstOrderLearning<DataType>::learning_parameters param, bool print)
-    {
-        assert(first_order_data_inited);
-
-        base::meta_learn(learner, first_order_data.train_data, param, print);
-
-        min_treshold = learner.max_error;
-        leaf_iter = learner.max_leaf_iter;
-
-        assert(leaf_iter != 0);
-
-        return learner;
-    }
-
-
-    void test_to_learn(NeuralNetworkAndScore learner)
-    {
-        assert(first_order_data_inited);
-
-        meta_net_and_score rez =
-                evaluate_learner(learner, first_order_data.test_data, true, leaf_iter, min_treshold);
-
-        learner.printWeights();
-        cout << "rez = " << rez.print() <<endl;
-    }
-
-    meta_net_and_score train_to_meta_learn(int n)
-    {
-        assert(meta_data_inited);
-
-        srand(time(0));
-        meta_net_and_score learner = NeuralNetworkAndScore(NeuralNetwork(n, 2*n, 1));
-
-        return train_to_meta_learn(n, learner);
-    }
-
-    meta_net_and_score train_to_meta_learn(int n, meta_net_and_score learner)
-    {
-        assert(meta_data_inited);
-
-        typename FirstOrderLearning<DataType>::evaluate_learner_parameters param;
-        param.iter_cutoff = leaf_iter;
-        param.threshold = treshold;
-
-        base::learn_to_meta_learn(learner, meta_data.train_meta_data, root_iter, param);
-
-        min_treshold = learner.max_error;
-        leaf_iter = learner.max_leaf_iter;
-
-        assert(leaf_iter != 0);
-
-        return learner;
-    }
-
-    void test_to_meta_learn(meta_net_and_score learner)
-    {
-        assert(meta_data_inited);
-
-        typename FirstOrderLearning<DataType>::evaluate_learner_parameters params;
-        params.iter_cutoff = leaf_iter;
-        params.threshold = min_treshold;
-
-        meta_net_and_score rez =
-                base::evaluate_meta_learner(learner, meta_data.test_meta_data, true, root_iter, params);
-
-        learner.printWeights();
-        cout << "rez = " << rez.print() <<endl;
-    }
-
-    /*void print_test_data_ordering(int n, vector<NeuralNetwork*> ensamble_nets, int num_iter)
-    {
-
-        assert(first_order_data_inited);
-
-        vector<pair<DecisionTreeScore, int> > train_error_ordering;
-        vector<pair<DecisionTreeScore, int> > opt_ordering;
-
-        vector<DecisionTreeScore> opt_scores = vector<DecisionTreeScore>
-                (first_order_data.test_data.size());
-
-        for(int i = 0; i < first_order_data.test_data.size();i++)
-        {
-            //ensamble neural training error
-            double local_error = 0;
-            for (int j = 0; j < ensamble_nets.size(); j++) {
-                assert(j < ensamble_nets.size());
-                NeuralNetwork leaf_learner = ensamble_nets[j];
-                NeuralNetwork::parameters leaf_parameters = cutoff_param(leaf_iter, 0.01);
-                //cout << "init potential branch train" << endl;
-                leaf_learner.train(&first_order_data.test_data[i], leaf_parameters, &NeuralNetwork::softPriorityTrain);
-                //cout << "end potential branch train" << endl;
-                local_error += (leaf_learner.get_error_of_data(&first_order_data.test_data[i]).second);
-            }
-
-            //opt error
-            DecisionTreeSynthesisViaDP<DataType> decision_tree_solver;
-            NeuralNetwork::parameters cutoff_parametes;
-            DecisionTreeScore size_opt = decision_tree_solver.synthesize_decision_tree_and_get_size
-                    (cutoff_parametes, n, first_order_data.test_data[i], optimal);
-
-            train_error_ordering.push_back(make_pair(DecisionTreeScore(local_error), i));
-            opt_ordering.push_back(make_pair(size_opt, i));
-            opt_scores[i] = size_opt;
-        }
-        sort_v(opt_ordering);
-        sort_v(train_error_ordering);
-        for(int i = 0;i<opt_ordering.size();i++) {
-            cout << first_order_data.test_data[train_error_ordering[i].second].printConcatinateOutput() << "\t";
-            cout << fixed << setprecision(4) << (double) train_error_ordering[i].f.size << "\t | \t";
-
-            cout << first_order_data.test_data[train_error_ordering[i].second].printConcatinateOutput() << "\t";
-            cout << (int) opt_scores[train_error_ordering[i].second].size << "\t";
-            cout << (int) opt_scores[train_error_ordering[i].second].num_solutions << "\t | \t";
-
-            cout << endl;
-        }
-
-        //only one network test
-        assert(ensamble_nets.size() == 1);
-
-
-
-        int num_training_swaps = get_swap_count<DataType>(first_order_data.train_data, ensamble_nets[0], leaf_iter);
-        int num_testing_swaps = get_swap_count<DataType>(first_order_data.test_data, ensamble_nets[0], leaf_iter);
-
-        cout << "#testing_swaps = " << num_testing_swaps << endl;
-        cout << endl;
-
-        fout_experiment << "\t" << first_order_data.train_data.size() <<"\t" << num_testing_swaps << "\t" << num_training_swaps << endl;
-
-
-    }*/
-
-    /*meta_net_and_score learn_to_generalize(meta_net_and_score learner)
-    {
-
-    }*/
-};
-
 
 vector<vector<pair<pair<double, double>, DecisionTreeScore> > > get_ensamble_neural_error_buckets
         (int n, FirstOrderDataset<DataAndDecisionTreeScore> first_order_data, NeuralNetwork::parameters params)
@@ -647,7 +33,7 @@ vector<vector<pair<pair<double, double>, DecisionTreeScore> > > get_ensamble_neu
 
     vector<DataAndDecisionTreeScore> sorted;
 
-    vector<NeuralNetwork*> ensamble_nets = params.progressive_ensamble_nets[n];
+    vector<NeuralNetworkAndScore*> ensamble_nets = params.progressive_ensamble_nets[n];
 
     int leaf_iter = params.get_iteration_count(n);
 
@@ -660,6 +46,7 @@ vector<vector<pair<pair<double, double>, DecisionTreeScore> > > get_ensamble_neu
 
     for(int i = 0; i < ensamble_nets.size(); i++)
     {
+        cout << "HERE " << ensamble_nets[i]->print() << endl;
         vector<double> sums;
         vector<int> count;
         bool prev_score_defined = false;
@@ -677,8 +64,9 @@ vector<vector<pair<pair<double, double>, DecisionTreeScore> > > get_ensamble_neu
 
 
             NeuralNetwork leaf_learner = ensamble_nets[i];
-            NeuralNetwork::parameters leaf_parameters = cutoff_param(leaf_iter, 0.01);
-            leaf_learner.train(&first_order_data.train_data[j], leaf_parameters, &NeuralNetwork::softPriorityTrain);
+//            NeuralNetwork::parameters leaf_parameters = cutoff_param(leaf_iter, 0.01);
+            params.set_iteration_count(leaf_iter);
+            leaf_learner.train(&first_order_data.train_data[j], params, params.priority_train_f);
             double error = leaf_learner.get_error_of_data(&first_order_data.train_data[j]).second;
 
             cout << first_order_data.train_data[j].printConcatinateOutput() << "\t" << first_order_data.train_data[j].score.size << "\t" << error << endl;
@@ -716,8 +104,11 @@ vector<vector<pair<pair<double, double>, DecisionTreeScore> > > get_ensamble_neu
 
         cout <<"n = " << n << " sums.size() == " << sums.size() <<endl;
 
-        for(int local_i = 0;local_i<sums.size()-1;local_i++)
+
+        for(int local_i = 0;local_i<(int)sums.size()-1;local_i++)
         {
+            assert(local_i<sums.size()-1);
+//            cout << local_i << " "<< sums.size()-1 << endl;
             cout << "local_i = " << local_i <<endl;
             cout << "sums[local_i] = " << sums[local_i]<<" | count[local_i] = " << count[local_i] <<" | ";
             double at_now = sums[local_i]/count[local_i];
@@ -774,8 +165,12 @@ vector<vector<vector<pair<pair<double, double>, DecisionTreeScore> > > > get_pro
     ret.push_back(vector<vector<pair<pair<double, double>, DecisionTreeScore> > > ());
     for(int i = 1; i <= n; i++)
     {
-        ret.push_back(get_ensamble_neural_error_buckets
-                       (i, first_order_datasets[i], params));
+        if(first_order_datasets[i].train_data.size()>=1) {
+            ret.push_back(get_ensamble_neural_error_buckets
+                                  (i, first_order_datasets[i], params));
+        } else{
+            ret.push_back(vector<vector<pair<pair<double, double>, DecisionTreeScore> > >());
+        }
     }
     return ret;
 }
@@ -794,7 +189,7 @@ NeuralNetworkAndScore improve_initialization(
 
     NeuralNetworkAndScore improved_initialization  =
             trainer.order_neural_errors
-                    (init_initialization, first_order_dataset.train_data, param, false);
+                    (init_initialization, first_order_dataset.train_data, param, false, true);
 
     NeuralNetworkAndScore test_good_initialization =
             trainer.evaluate_learner
@@ -857,7 +252,7 @@ vector<DataAndDecisionTreeScore> select_all_functions(int n)
 
                 ret.push_back(new_data);
             }
-            else if(/*sample_ids[i].size <= 9 && */__builtin_popcount(i) <= 3)
+            else if(/*sample_ids[i].size <= 9 && */__builtin_popcount(i) <= 2)
             {
                 DataAndDecisionTreeScore new_data(sample_ids[i]);
                 new_data.init_exaustive_table_with_unary_output(n, sample_ids[i].function);
@@ -917,7 +312,7 @@ vector<DataAndDecisionTreeScore> take_percentage(vector<DataAndDecisionTreeScore
     vector<DataAndDecisionTreeScore> ret;
     for(int i = 0;i<all_data.size();i++)
     {
-        if(rand(0, 100) < take_percent*100)
+        if(rand(0, 100) <= take_percent*100)
         {
             ret.push_back(all_data[i]);
         }
@@ -978,7 +373,7 @@ void multi_task_learning_for_neural_error_ordering()
 
                 param.leaf_iter_init = 18;
                 param.max_boundary_size = 5;
-                param.max_num_iter = 10;
+                param.max_num_iter = 20;
 
 
                 int sum = 0;
@@ -1024,8 +419,8 @@ void multi_task_learning_for_neural_error_ordering()
                 for (int i = 0; i < holy_grail.test_data.size(); i++) {
                     cout << "-----------------------------------------------------------------" << endl;
                     cout << "NOW TESTING ON FIRST_ORDER_DATASET.TEST[" << i << "]" << endl;
-                    NeuralNetworkAndScore result = improve_initialization<DataAndDecisionTreeScore>(local_n, at_init,
-                                                                                holy_grail.test_data[i], param, true);
+                    NeuralNetworkAndScore result = improve_initialization<DataAndDecisionTreeScore>(
+                            local_n, at_init, holy_grail.test_data[i], param, true);
                     sum += result.sum_ordering_error;
                 }
 
@@ -1042,26 +437,24 @@ void multi_task_learning_for_neural_error_ordering()
 }
 
 template<typename DataType>
-vector<NeuralNetwork*> get_local_ensamble(
+vector<NeuralNetworkAndScore*> get_local_ensamble(
         int local_n,
         vector<int> hidden_layer_width,
         vector<int> hidden_layer_depth,
         int num_ensambles,
         vector<FirstOrderDataset<DataType> > first_order_datasets,
-        NeuralNetwork ensamble_progressive_nets[10][10],
-        vector<typename FirstOrderLearning<DataType>::learning_parameters> all_params)
+        NeuralNetworkAndScore ensamble_progressive_nets[10][10],
+        typename FirstOrderLearning<DataType>::learning_parameters all_params)
 {
-    vector<NeuralNetwork*> local_ensamble;
+    vector<NeuralNetworkAndScore*> local_ensamble;
 
     for(int ensamble_id = 0; ensamble_id < num_ensambles; ensamble_id++)
     {
-        srand(ensamble_id);
-
-        vector<int> hidden_layer_widths = hidden_layer_block(hidden_layer_width[local_n], hidden_layer_depth[local_n-1]);
+        vector<int> hidden_layer_widths = hidden_layer_block(hidden_layer_width[local_n], hidden_layer_depth[local_n]);
 
         NeuralNetworkAndScore radnom_init = NeuralNetworkAndScore(NeuralNetwork(local_n, hidden_layer_widths, 1));
 
-        NeuralNetworkAndScore improved_initialization = improve_initialization(local_n, radnom_init, first_order_datasets[local_n], all_params[ensamble_id], true);
+        NeuralNetworkAndScore improved_initialization = improve_initialization(local_n, radnom_init, first_order_datasets[local_n], all_params, true);
 
         ensamble_progressive_nets[local_n][ensamble_id] = improved_initialization;
 
@@ -1219,7 +612,7 @@ public:
 
     SynthesizersScoreSummary run_decision_tree_synthesis_comparison(
             SynthesizersScoreSummary meta_meta_net,
-            bitvectorFunctionSolver<Data> bitvector_data,
+            BitvectorFunctionSolver<Data> bitvector_data,
             int n,
             vector<vector<Data> > data,
             bool run_reptile,
@@ -1309,7 +702,7 @@ public:
 
     void SA_over_latent_decision_trees(
             SynthesizersScoreSummary &best,
-            bitvectorFunctionSolver<Data> bitvector_data,
+            BitvectorFunctionSolver<Data> bitvector_data,
             int n,
             vector<vector<Data> > data,
             bool run_reptile_training)
@@ -1356,7 +749,7 @@ public:
 
         int leaf_iter = 30;
 
-        bitvectorFunctionSolver<Data> bitvector_data(leaf_iter);
+        BitvectorFunctionSolver<Data> bitvector_data(leaf_iter);
 
         //meta_net_and_score meta_meta_net = bitvector_data.train(n);
         SynthesizersScoreSummary meta_meta_net = NeuralNetworkAndScore(NeuralNetwork(n, 2*n, 1));
@@ -1438,7 +831,7 @@ public:
 
     /*SynthesizersScoreSummary run_new_decision_tree_synthesis_comparison(
             vector<NeuralNetwork*> progressive_nets,
-            bitvectorFunctionSolver bitvector_data,
+            BitvectorFunctionSolver bitvector_data,
             int n,
             vector<vector<Data> > data,
             bool print)
@@ -1521,23 +914,23 @@ public:
     void train_library(
             int min_trainable_n,
             int max_n, vector<int> leaf_iters, vector<int> hidden_layer_width, vector<int> hidden_layer_depth,
-            int num_ensambles, vector<FirstOrderDataset<DataType> > first_order_datasets)
+            int num_ensambles, vector<FirstOrderDataset<DataType> > first_order_datasets,
+            typename FirstOrderLearning<DataType>::learning_parameters all_params)
     {
         assert(leaf_iters.size() > max_n-1);
         assert(hidden_layer_width.size() > max_n-1);
-        NeuralNetwork ensamble_progressive_nets[10][10];
-        vector<vector<NeuralNetwork*> > ensamble_progressive_net_pointers;
-        ensamble_progressive_net_pointers.push_back(vector<NeuralNetwork*>());// for n = 0;
+        NeuralNetworkAndScore ensamble_progressive_nets[10][10];
+        vector<vector<NeuralNetworkAndScore*> > ensamble_progressive_net_pointers;
+        ensamble_progressive_net_pointers.push_back(vector<NeuralNetworkAndScore*>());// for n = 0;
 
         for(int local_n = 2; local_n < min_trainable_n; local_n++)
         {
-            vector<NeuralNetwork*> local_ensamble;
+            vector<NeuralNetworkAndScore*> local_ensamble;
             for(int ensamble_id = 0; ensamble_id < num_ensambles; ensamble_id++) {
-                srand(time(0));
 
                 vector<int> hidden_layer_widths = hidden_layer_block(hidden_layer_width[local_n - 1], hidden_layer_depth[local_n-1]);
 
-                SynthesizersScoreSummary meta_meta_net =
+                NeuralNetworkAndScore meta_meta_net =
                         NeuralNetworkAndScore(NeuralNetwork(local_n - 1, hidden_layer_widths, 1));
 
                 ensamble_progressive_nets[local_n - 1][ensamble_id] = meta_meta_net;
@@ -1550,20 +943,35 @@ public:
         {
 
 
-//            bool do_learn = (local_n == 4);
-//
-//            vector<NeuralNetwork*> local_ensamble =
-//                    get_local_ensamble(local_n-1, hidden_layer_width, hidden_layer_depth,
-//                                       num_ensambles, first_order_datasets,  do_learn, ensamble_progressive_nets);
-//
-//
-//            // (local_n, leaf_iters, hidden_layer_width, hidden_layer_depth,
-//            //       num_ensambles, first_order_datasets, do_learn, ensamble_progressive_net_pointers);
-//
-//            ensamble_progressive_net_pointers.push_back(local_ensamble);
-//
+//            cout << "HERE A-2" << endl;
+
+            vector<NeuralNetworkAndScore*> local_ensamble =
+                    get_local_ensamble(
+                            local_n-1, hidden_layer_width, hidden_layer_depth,
+                            num_ensambles, first_order_datasets, ensamble_progressive_nets, all_params);
+
+            // (local_n, leaf_iters, hidden_layer_width, hidden_layer_depth,
+            //       num_ensambles, first_order_datasets, do_learn, ensamble_progressive_net_pointers);
+
+            ensamble_progressive_net_pointers.push_back(local_ensamble);
+
             NeuralNetwork::parameters cutoff_parameter = NeuralNetwork::parameters(leaf_iters);
+            cutoff_parameter.priority_train_f = all_params.choosePriorityTrain;
             cutoff_parameter.progressive_ensamble_nets = ensamble_progressive_net_pointers;
+
+            bool do_learn = false;
+
+////            need to fix; pre-training model parameters differ from testing model parameters. Check how reptile_step_vary_epsilon is done
+//            do_learn = true;
+//            for(int i = 0;i<cutoff_parameter.progressive_ensamble_nets[local_n-1].size();i++)
+//            {
+//                if(cutoff_parameter.progressive_ensamble_nets[local_n-1][i]->sum_ordering_error != 0)
+//                {
+//                    do_learn = false;
+//                }
+//            }
+//
+//            cout << "DO_LEARN = " << do_learn << endl;
 //
 //            if(do_learn)
 //            {
@@ -1571,19 +979,10 @@ public:
 //                        get_progressive_ensamble_neural_error_buckets
 //                                (local_n - 1, first_order_datasets, cutoff_parameter);
 //            }
-//
-////            assert(0);//fix this "if(local_n <= 3)"
-//
-//            if(local_n <= 3)
-//            {
-//                continue;
-//            }
 
-
-            bitvectorFunctionSolver<DataType> complete_bitvector_data(leaf_iters[local_n]);
+            BitvectorFunctionSolver<DataType> complete_bitvector_data(leaf_iters[local_n]);
 
             complete_bitvector_data.initFirstOrderData(local_n, first_order_datasets[local_n]);
-
 
             DecisionTreeSynthesisViaDP<DataType> decision_tree_solver;
 
@@ -1599,7 +998,6 @@ public:
 
                 DecisionTreeScore size_opt, size_combined_guided, size_neural_guided, size_entropy_guided, size_random_guided;
 
-
                 if(local_n <= 4)
                 {
 
@@ -1611,10 +1009,8 @@ public:
                 size_neural_guided = decision_tree_solver.synthesize_decision_tree_and_get_size
                         (cutoff_parameter, local_n, complete_bitvector_data.first_order_data.test_data[i], combined_guided);
 
-
                 size_neural_guided = decision_tree_solver.synthesize_decision_tree_and_get_size
                         (cutoff_parameter, local_n, complete_bitvector_data.first_order_data.test_data[i], neural_guided);
-
 
                 size_entropy_guided = decision_tree_solver.synthesize_decision_tree_and_get_size
                         (cutoff_parameter, local_n, complete_bitvector_data.first_order_data.test_data[i], entropy_guided);
@@ -1623,12 +1019,8 @@ public:
                 //        (cutoff_parameter, local_n, complete_bitvector_data.first_order_data.test_data[i], random_guided);
 
                 //cout parameters:
-
-
                 //cout << complete_bitvector_data.first_order_data.test_data[i].printConcatinateOutput() << endl;
                 //cout << decision_tree_size.print() << endl << endl;
-
-
 
                 if(local_n <= 4)
                 {
@@ -1641,6 +1033,7 @@ public:
                 //random_to_entropy.compose_with(size_random_guided, size_entropy_guided);
 
             }
+
             cout << endl;
 
             fout << num_ensambles << "\t" << opt_to_neural.print_base() << "\t" << neural_to_entropy.print_base() <<"\t" << neural_to_entropy.print_other() <<endl;
@@ -1730,7 +1123,7 @@ void see_delta_w()
     for(int i = 0; i<noramlized_meta_task.size();i++)
     {
         vector<bit_signature> bit_signature_vector = to_bit_signature_vector((1<<n), i);
-        vector<bit_signature> network_output = *net_learning_nets.forwardPropagate(&bit_signature_vector, false);
+        vector<bit_signature> network_output = net_learning_nets.forwardPropagate(&bit_signature_vector, false);
 
         noramlized_meta_task.unnormalize(network_output);
 
@@ -1800,104 +1193,103 @@ public:
 
             if(false)
             {
-                cout << "See delta_w" << endl;
-                see_delta_w();
-                return;
-            }
-            if(true)
-            {
-                multi_task_learning_for_neural_error_ordering();
+                latentDecisionTreeExtractor trainer = latentDecisionTreeExtractor();
+
+                trainer.train(3);
             }
             if(false)
             {
-                for(int num_iter = 20; ; num_iter += 10)
-                    for(double training_set_size = 0.5; training_set_size <= 1 ; training_set_size+=0.1)
-                    {
-                        vector<int> leaf_iters;
-                        leaf_iters.push_back(-1);//no leaf_iter for n = 0;
-                        leaf_iters.push_back(8);// for n = 1;
-                        leaf_iters.push_back(16);// for n = 2;
-                        leaf_iters.push_back(18);// for n = 3;
-                        leaf_iters.push_back(32);// for n = 4;
-                        leaf_iters.push_back(64);// for n = 5;
+                multi_task_learning_for_neural_error_ordering();
+            }
+            if(true)
+            {
+                int min_trainable_n = 2;
+                int max_trainable_n = 4;
 
-                        vector<int> hidden_layer_width;
-                        hidden_layer_width.push_back(-1);//no leaf_iter for n = 0;
-                        hidden_layer_width.push_back(2);// for n = 1;
-                        hidden_layer_width.push_back(4);// for n = 2;
-                        hidden_layer_width.push_back(6);// for n = 3;
-                        hidden_layer_width.push_back(8);// for n = 4;
-                        hidden_layer_width.push_back(10);// for n = 5;
+                vector<FirstOrderDataset<DataAndDecisionTreeScore> > datasets;
+                for(int i = 0;i<min_trainable_n-1;i++)
+                {
+                    datasets.push_back(FirstOrderDataset<DataAndDecisionTreeScore>());//n < min_trainable_n
+                }
 
+                for(int i = min_trainable_n-1; i<=max_trainable_n; i++)
+                {
+                    datasets.push_back(init_custom_data_and_difficulty_set(i, 100, 60));
+                }
 
-                        vector<int> hidden_layer_depth;
-                        hidden_layer_depth.push_back(-1);//no leaf_iter for n = 0;
-                        hidden_layer_depth.push_back(1);// for n = 1;
-                        hidden_layer_depth.push_back(1);// for n = 2;
-                        hidden_layer_depth.push_back(1);// for n = 3;
-                        hidden_layer_depth.push_back(1);// for n = 4;
-                        hidden_layer_depth.push_back(1);// for n = 5;
+                for(int num_iter = 20; num_iter <= 100 ; num_iter += 40)
+                {
+                    vector<int> leaf_iters;
+                    leaf_iters.push_back(-1);//no leaf_iter for n = 0;
+                    leaf_iters.push_back(8);// for n = 1;
+                    leaf_iters.push_back(16);// for n = 2;
+                    leaf_iters.push_back(18);// for n = 3;
+                    leaf_iters.push_back(32);// for n = 4;
+                    leaf_iters.push_back(64);// for n = 5;
+                    leaf_iters.push_back(128);// for n = 4;
+                    leaf_iters.push_back(256);// for n = 5;
 
-                        int min_trainable_n = 4;
-                        int max_trainable_n = 4;
-
-                        vector<FirstOrderDataset<DataAndDecisionTreeScore> > datasets;
-                        for(int i = 0;i<min_trainable_n-1;i++)
-                        {
-                            datasets.push_back(FirstOrderDataset<DataAndDecisionTreeScore>());//n < min_trainable_n
-                        }
-
-                        for(int i = min_trainable_n-1; i<max_trainable_n; i++)
-                        {
-                            datasets.push_back(init_custom_data_and_difficulty_set(i, training_set_size*100, 60));
-                        }
+                    vector<int> hidden_layer_width;
+                    hidden_layer_width.push_back(-1);//no leaf_iter for n = 0;
+                    hidden_layer_width.push_back(4);// for n = 1;
+                    hidden_layer_width.push_back(6);// for n = 2;
+                    hidden_layer_width.push_back(8);// for n = 3;
+                    hidden_layer_width.push_back(10);// for n = 4;
+                    hidden_layer_width.push_back(12);// for n = 5;
 
 
-                        // need to remove assert (n<=3)
-                        // datasets.push_back(init_custom_data_and_difficulty_set(max_trainable_n));
+                    vector<int> hidden_layer_depth;
+                    hidden_layer_depth.push_back(-1);//no leaf_iter for n = 0;
+                    hidden_layer_depth.push_back(1);// for n = 1;
+                    hidden_layer_depth.push_back(1);// for n = 2;
+                    hidden_layer_depth.push_back(1);// for n = 3;
+                    hidden_layer_depth.push_back(1);// for n = 4;
+                    hidden_layer_depth.push_back(1);// for n = 5;
 
+                    for(int repeat = 0; repeat < 1; repeat++) {
 
-                        //datasets.push_back(init_random_test_set(max_trainable_n));
+//                            assert(min_trainable_n == max_trainable_n);
+                        NeuralNetwork ensamble_progressive_nets[10][10];
 
-                        for(int repeat = 0; repeat < 5; repeat++) {
+                        typename FirstOrderLearning<DataAndDecisionTreeScore>::learning_parameters all_params =
+                                FirstOrderLearning<DataAndDecisionTreeScore>::learning_parameters();
+                        all_params.at_initiation_of_parameters_may_21st_10_52_pm();
 
-                            assert(min_trainable_n == max_trainable_n);
-                            NeuralNetwork ensamble_progressive_nets[10][10];
+                        all_params.leaf_iter_init = leaf_iters[3];
+                        all_params.treshold = 0.4;
+                        all_params.max_boundary_size = 1;
+                        all_params.max_num_iter = num_iter;
 
-                            vector<typename FirstOrderLearning<DataAndDecisionTreeScore>::learning_parameters> all_params;
-                            all_params.push_back(typename FirstOrderLearning<DataAndDecisionTreeScore>::learning_parameters());
-                            all_params[0].at_initiation_of_parameters_may_21st_10_52_pm();
+                        /*int leaf_iter_init;
 
-                            all_params[0].leaf_iter_init = leaf_iters[3];
-                            all_params[0].treshold = 0.4;
-                            all_params[0].max_boundary_size = 5;
-                            all_params[0].max_num_iter = num_iter;
+                        double treshold;*/
 
-                            /*int leaf_iter_init;
+                        int num_ensambles = 1;
 
-                            double treshold;*/
-
-                            int num_ensambles = 1;
-
-                            fout_experiment << num_iter <<"\t";
+                        fout_experiment << num_iter <<"\t";
 
 //                            get_local_ensamble<DataAndDecisionTreeScore>
 //                                    (min_trainable_n-1, hidden_layer_width, hidden_layer_depth,
 //                                     , datasets, ensamble_progressive_nets, all_params);
 
 
-                            latentDecisionTreeExtractor SpicyAmphibian = latentDecisionTreeExtractor();
+                        latentDecisionTreeExtractor SpicyAmphibian = latentDecisionTreeExtractor();
 
 //                            assert(false);
 
-                            SpicyAmphibian.train_library<DataAndDecisionTreeScore>
-                                    (min_trainable_n, max_trainable_n, leaf_iters, hidden_layer_width, hidden_layer_depth,
-                                     num_ensambles, datasets);
-                        }
+                        SpicyAmphibian.train_library<DataAndDecisionTreeScore>
+                                (min_trainable_n, max_trainable_n, leaf_iters, hidden_layer_width, hidden_layer_depth,
+                                 num_ensambles, datasets, all_params);
                     }
+                }
                 return;
             }
-
+            if(false)
+            {
+                cout << "See delta_w" << endl;
+                see_delta_w();
+                return;
+            }
             if(false)
             {
                 DecisionTreeSynthesisViaDP<Data> dper;

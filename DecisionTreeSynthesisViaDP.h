@@ -32,14 +32,16 @@ struct dp_ret
 
     int local_era = -1;
 
-    bool get_vis()
+    bool get_vis(int local_era_counter)
     {
-        return local_era == era_counter;
+//        cout << "Get_vis = " << local_era <<" "<< local_era_counter << endl;
+        return local_era == local_era_counter;
     }
 
-    void set_vis()
+    void set_vis(int local_era_counter)
     {
-        local_era = era_counter;
+//        cout << "set_vis = " << local_era_counter << endl;
+        local_era = local_era_counter;
     }
 
     void set_vis_false()
@@ -73,10 +75,10 @@ struct dp_ret
         return name;
     }
 
-    void init(int _mask_size, int _w, int _h, int _num_solutions, int out)
+    void init(int _mask_size, int _w, int _h, int _num_solutions, int out, int local_era_counter)
     {
         mask_size = _mask_size;
-        set_vis();
+        set_vis(local_era_counter);
         w = _w,
         h = _h,
 
@@ -233,6 +235,8 @@ public:
 //
 //    int dp_num_solutions[(1<<16)];
 
+    int local_era_counter;
+
     DecisionTreeSynthesisViaDP()
     {
 
@@ -242,12 +246,15 @@ public:
     dp_ret* rek(int n, datatype* the_data, int mask)
     {
         assert(mask < (1<<16));
-        if(!dp_data[mask].get_vis())
+        if(!dp_data[mask].get_vis(local_era_counter))
         {
+//            cout << "enter " << local_era_counter << endl;
             dp_data[mask].init();
-            dp_data[mask].set_vis();
+            dp_data[mask].set_vis(local_era_counter);
             if(the_data->is_constant())
             {
+
+//                cout << "is_constant " << local_era_counter << endl;
                 bit_signature out = 0;
                 for(int i = 0;i<the_data->size();i++)
                 {
@@ -260,10 +267,11 @@ public:
                         assert(out == the_data->out[i][0]);
                     }
                 }
-                dp_data[mask].init((1<<n), 1, 1, 1, out.value);
+                dp_data[mask].init((1<<n), 1, 1, 1, out.value, local_era_counter);
             }
             else
             {
+//                cout << "composite " << local_era_counter << endl;
                 vector<int> active_nodes = the_data->get_active_bits();
 
                 dp_ret ret;
@@ -327,6 +335,8 @@ public:
             }
         }
 
+//        cout << "Exit  " << local_era_counter << endl;
+        assert(dp_data[mask].mask_size == (1<<n));
         return &dp_data[mask];
     }
 
@@ -375,6 +385,8 @@ public:
 
     void initialize_local_optimal_search()
     {
+        local_era_counter = era_counter+1;
+//        cout << "initialize " << era_counter+1 << endl;
         era_counter++;
     }
 

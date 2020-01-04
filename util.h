@@ -34,9 +34,9 @@ double max_of_vector(vector<bit_signature> v);
 
 vector<bit_signature> get_error_vector(vector<bit_signature> correct, vector<bit_signature> predict, int the_pow);
 
-double get_max_of_error_vector(vector<bit_signature>* correct, vector<bit_signature>* predict, int the_pow);
+double get_max_of_error_vector(vector<bit_signature>* correct, vector<bit_signature> predict, int the_pow);
 
-bool check(vector<bit_signature> *correct, vector<bit_signature> *predict, double accuracy);
+bool check(vector<bit_signature> *correct, vector<bit_signature> predict, double accuracy);
 
 vector<bit_signature> vector_value_product(double value, vector<bit_signature> vec);
 
