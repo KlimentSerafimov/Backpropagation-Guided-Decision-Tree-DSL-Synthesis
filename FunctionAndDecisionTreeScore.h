@@ -12,6 +12,13 @@ class FunctionAndDecisionTreeScore: public DecisionTreeScore
 public:
     long long function;
 
+    FunctionAndDecisionTreeScore(int _function, int _size): DecisionTreeScore()
+    {
+        function = _function;
+        size = _size;
+        num_solutions = 1;
+    }
+
     FunctionAndDecisionTreeScore(int _function, DecisionTreeScore tmp): DecisionTreeScore()
     {
         function = _function;

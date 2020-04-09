@@ -55,52 +55,6 @@ public:
     const double treshold = 0.4;
     double min_treshold = treshold/3;
 
-    NeuralNetworkAndScore train_to_order_neural_errors
-            (int n, NeuralNetworkAndScore learner, typename FirstOrderLearning<DataType>::learning_parameters param, bool print)
-    {
-        assert(first_order_data_inited);
-
-        base::order_neural_errors(learner, first_order_data.train_data, param, print);
-
-        return learner;
-    }
-
-    NeuralNetworkAndScore train_to_learn(int n, typename FirstOrderLearning<DataType>::learning_parameters param, bool print)
-    {
-        assert(first_order_data_inited);
-
-        srand(time(0));
-        NeuralNetworkAndScore learner = NeuralNetworkAndScore(NeuralNetwork(n, 2*n, 1));
-
-        return train_to_learn(n, learner, param, print);
-    }
-
-    NeuralNetworkAndScore train_to_learn(int n, NeuralNetworkAndScore learner, typename FirstOrderLearning<DataType>::learning_parameters param, bool print)
-    {
-        assert(first_order_data_inited);
-
-        base::meta_learn(learner, first_order_data.train_data, param, print);
-
-        min_treshold = learner.max_error;
-        leaf_iter = learner.max_leaf_iter;
-
-        assert(leaf_iter != 0);
-
-        return learner;
-    }
-
-
-    void test_to_learn(NeuralNetworkAndScore learner)
-    {
-        assert(first_order_data_inited);
-
-        meta_net_and_score rez =
-                evaluate_learner(learner, first_order_data.test_data, true, leaf_iter, min_treshold);
-
-        learner.printWeights();
-        cout << "rez = " << rez.print() <<endl;
-    }
-
     meta_net_and_score train_to_meta_learn(int n)
     {
         assert(meta_data_inited);
@@ -124,6 +78,10 @@ public:
 
         min_treshold = learner.max_error;
         leaf_iter = learner.max_leaf_iter;
+
+        cout << "AFTER: " << endl;
+        cout << "min_treshold = " << min_treshold << endl;
+        cout << "leaf_iter = " << leaf_iter << endl;
 
         assert(leaf_iter != 0);
 

@@ -51,7 +51,7 @@ public:
     int max_train_iter = 0;
     int sum_train_iter = 0;
 
-    int max_leaf_iter = (1<<30);
+    int max_leaf_iter = -1;
 
     vector<double> individual_max_errors;
 

@@ -236,7 +236,8 @@ public:
                 assert(j<param.progressive_ensamble_nets[n-1].size());
                 NeuralNetwork leaf_learner = param.progressive_ensamble_nets[n-1][j];
                 //leaf_learner.printWeights();
-                NeuralNetwork::parameters leaf_parameters = cutoff_param(param.get_iteration_count(n - 1), 0.01);
+                NeuralNetwork::parameters leaf_parameters =
+                        cutoff_param(param.get_iteration_count(n - 1), 0.01);
                 //cout << "init potential branch train" << endl;
 
                 //leaf_learner.printWeights();

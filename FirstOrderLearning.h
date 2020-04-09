@@ -404,269 +404,6 @@ public:
     };
 
 
-    void reptile_SA_train(
-            NeuralNetworkAndScore &global_best_solution,
-            vector<datatype> f_data,
-            learning_parameters init_param,
-            bool print)
-    {
-        //OLD o_rder_neural_errors with a trainer that learns to reduce k for the normal tasks
-        learning_parameters learning_param = init_param;
-
-        double max_treshold = learning_param.treshold;
-        double min_treshold = (2*max_treshold)/3;
-
-        int k_iter = learning_param.leaf_iter_init;
-
-        int global_stagnation = 0;
-
-        Policy local_policy(f_data, false);
-        local_policy.policy_type = Policy::total_drift;
-
-        non_dominating_score_boundary boundary;
-
-        NeuralNetworkAndScore at_walking_solution;
-
-        NeuralNetworkAndScore best_solution;
-
-        NeuralNetworkAndScore SA_iter_best_solution = best_solution = at_walking_solution =
-                evaluate_learner(global_best_solution, f_data, false,
-                        k_iter,learning_param.treshold, learning_param.choosePriorityTrain);
-
-        local_policy.update(&at_walking_solution);
-
-        //print_ordering(local_policy, f_data, at_walking_solution.tarjans);
-
-        boundary.update(at_walking_solution);
-
-
-        if(best_solution < global_best_solution)
-        {
-            global_best_solution = best_solution;
-        }
-
-        bool enter = false;
-
-        double epsilon = learning_param.init_epsilon;
-
-        int repeat_count =learning_param.repeat_count;
-        int max_num_evals =learning_param.max_num_evals;
-        int max_num_iter = max_num_evals*repeat_count;
-
-
-        for(int k_iter_loops = 0; global_stagnation <learning_param.give_up_after
-                                  && epsilon >=learning_param.end_epsilon; )
-        {
-
-
-            if(enter)
-            {
-                local_policy.policy_type = Policy::controled_drift;
-
-               learning_param.treshold*=0.8;
-                if(learning_param.treshold < min_treshold)
-                {
-                    if(at_walking_solution.sum_ordering_error == 0)
-                    {
-                        break;
-                    }
-                }
-                else
-                {
-                   learning_param.treshold = max(learning_param.treshold, min_treshold);
-                }
-
-                if(learning_param.treshold == min_treshold)
-                {
-                    k_iter *= 4;
-                    k_iter /= 5;
-
-                    k_iter = max(k_iter, 2*f_data[0].size());
-                }
-                at_walking_solution = evaluate_learner(SA_iter_best_solution, f_data, false, k_iter,learning_param.treshold,learning_param.choosePriorityTrain);
-                local_policy.update(&at_walking_solution);
-                //print_ordering(local_policy, f_data, at_walking_solution.tarjans);
-
-            }
-            if(print)
-            {
-                cout << "NEW k_iter = " << k_iter <<"; NEW treshold = " <<learning_param.treshold << endl;
-            }
-
-            enter = true;
-
-            int count_stagnation = 0;
-
-            int SA_stagnation = 0;
-
-
-            assert(k_iter>0);
-
-            for (
-
-                    int iter = 1;
-
-                    (at_walking_solution.sum_ordering_error > 0
-                     || at_walking_solution.num_train_fail > 0)
-                    && global_stagnation <learning_param.give_up_after
-                    && epsilon >=learning_param.end_epsilon
-                    ;
-
-                    iter++
-
-                    ) {
-
-
-                epsilon -= (-learning_param.end_epsilon+learning_param.init_epsilon)/max_num_iter;
-
-                //epsilon = 0.05+(double)(at_walking_solution.ordering_error)/300;
-
-                //at_walking_solution = boundary.query();
-
-                reptile_step_vary_epsilon(at_walking_solution, f_data, k_iter, local_policy, epsilon,learning_param.choosePriorityTrain);
-
-                //at_walking_solution.printWeights();
-
-
-                if (iter % repeat_count == 0) {
-
-                    k_iter_loops+=repeat_count;
-
-                    cout << k_iter_loops << " / "<< max_num_iter << endl;
-
-                    at_walking_solution = evaluate_learner(at_walking_solution, f_data, print, k_iter,learning_param.treshold,learning_param.choosePriorityTrain);
-
-                    local_policy.update(&at_walking_solution);
-
-                    //print_ordering(local_policy, f_data, at_walking_solution.tarjans);
-
-                    if(true || at_walking_solution.max_error < 0.499)
-                    {
-
-                        local_policy.policy_type = Policy::controled_drift;
-                    }
-                    else{
-
-                        local_policy.policy_type = Policy::total_drift;
-                    }
-
-                    //cout << new_score << endl;
-
-                    //at_walking_solution.printWeights();
-
-                    boundary.update(at_walking_solution);
-
-                    if(at_walking_solution < SA_iter_best_solution) {
-
-                        update_net_and_score(SA_iter_best_solution, at_walking_solution);
-
-                        count_stagnation = 0;
-
-                        if(update_solutions
-                                (SA_iter_best_solution, best_solution, global_best_solution,
-                                 global_stagnation, SA_stagnation))
-                        {
-                            print_stats
-                                    (epsilon, count_stagnation, global_stagnation, iter, k_iter, k_iter_loops, at_walking_solution, SA_iter_best_solution, best_solution, boundary, local_policy, f_data);
-                        }
-                    }
-                    else
-                    {
-
-
-                        count_stagnation++;
-                        SA_stagnation++;
-
-
-
-                        if(count_stagnation >=learning_param.trials)
-                        {
-                            global_stagnation++;
-
-
-                            NeuralNetwork next_step = step(SA_iter_best_solution,learning_param.step_radius_size);
-
-                            cout << "SA step" << endl;
-
-
-                            NeuralNetworkAndScore try_step_solution = evaluate_learner(next_step, f_data, print, k_iter,learning_param.treshold,learning_param.choosePriorityTrain);
-
-                            k_iter =learning_param.leaf_iter_init;
-
-                            if(false) {
-
-                                if (boundary.update(try_step_solution)) {
-
-                                    cout << "SUCCESS" << endl;
-
-                                    local_policy.update(&try_step_solution);
-                                    print_ordering(local_policy, f_data, try_step_solution.tarjans);
-
-                                    update_net_and_score(at_walking_solution, try_step_solution);
-
-                                    update_net_and_score(SA_iter_best_solution, at_walking_solution);
-                                    count_stagnation = 0;
-
-                                    if(update_solutions
-                                            (SA_iter_best_solution, best_solution, global_best_solution,
-                                             global_stagnation, SA_stagnation))
-                                    {
-                                        print_stats(epsilon, count_stagnation, global_stagnation, iter, k_iter, k_iter_loops, at_walking_solution, SA_iter_best_solution, best_solution, boundary, local_policy, f_data);
-                                    }
-                                }
-                                else
-                                {
-                                    cout << "TO TRY AGAIN" << endl;
-                                }
-                            }
-
-                            if(true) {
-
-                                count_stagnation = 0;
-
-                                boundary.update(try_step_solution);
-                                local_policy.update(&try_step_solution);
-
-                                //print_ordering(local_policy, f_data, try_step_solution.tarjans);
-
-                                update_net_and_score(at_walking_solution, try_step_solution);
-
-                                update_net_and_score(SA_iter_best_solution, at_walking_solution);
-
-                                if(update_solutions
-                                        (SA_iter_best_solution, best_solution, global_best_solution,
-                                         global_stagnation, SA_stagnation))
-                                {
-                                    print_stats(epsilon, count_stagnation, global_stagnation, iter, k_iter, k_iter_loops, at_walking_solution, SA_iter_best_solution, best_solution, boundary, local_policy, f_data);
-                                }
-                            }
-                        }
-
-                    }
-
-                    if(false) {
-
-                        print_stats(epsilon, count_stagnation, global_stagnation, iter, k_iter, k_iter_loops, at_walking_solution, SA_iter_best_solution, best_solution, boundary, local_policy, f_data);
-
-                    }
-                }
-                else{
-
-                    boundary.update(at_walking_solution);
-                }
-            }
-        }
-    }
-
-    void meta_learn(
-            NeuralNetworkAndScore &global_best_solution,
-            vector<datatype> f_data,
-            learning_parameters learning_param,
-            bool print)
-    {
-        reptile_SA_train(global_best_solution, f_data, learning_param, print);
-    }
-
     bool explore_step(
             NeuralNetworkAndScore at_walking_solution, NeuralNetworkAndScore try_solution, double temperature, bool print)
     {
@@ -688,6 +425,20 @@ public:
         return false;
     }
 
+    NeuralNetworkAndScore order_neural_errors__contracting_amphibian(
+            NeuralNetworkAndScore global_best_solution,
+            vector<datatype> f_data,
+            learning_parameters init_param,
+            bool print,
+            bool minimal_print)
+    {
+        for(int i = 0; i < f_data.size()-1; i++)
+        {
+            assert(f_data[i].score < f_data[i+1].score);
+        }
+
+    }
+
     NeuralNetworkAndScore order_neural_errors(
             NeuralNetworkAndScore global_best_solution,
             vector<datatype> f_data,
@@ -697,7 +448,7 @@ public:
     {
         learning_parameters learning_param = init_param;
 
-        int k_iter =learning_param.leaf_iter_init;
+        int k_iter = learning_param.leaf_iter_init;
 
         evaluate_learner_parameters eval_param = evaluate_learner_parameters(learning_param);
 
@@ -765,7 +516,7 @@ public:
 
             bool pushed_boundary = boundary.update(try_score);
 
-            assert(boundary.size() == 1);
+//            assert(boundary.size() == 1);
 
             if (pushed_boundary || try_score < at_walking_solution) {
                 at_walking_solution = try_score;
@@ -913,7 +664,8 @@ public:
         //cout << "in reptile_train" <<endl;
         for(int i = 0; i < root_iter_cutoff; i++)
         {
-            reptile_step(global_best_solution, data, learning_param.iter_cutoff, learning_param.threshold);
+            int next_i = rand(0, data.size()-1);
+            reptile_step(global_best_solution, data, learning_param.iter_cutoff, learning_param.threshold, next_i);
         }
     }
 
@@ -974,10 +726,11 @@ public:
             NeuralNetwork &try_learner,
             vector<datatype> data,
             int iter_cutoff,
+            double threshold,
             int i)
     {
         int learning_rate = 1;
-        reptile_step(try_learner, data, iter_cutoff, i, learning_rate, 0.33, &NeuralNetwork::softPriorityTrain);
+        reptile_step(try_learner, data, iter_cutoff, i, learning_rate, threshold, &NeuralNetwork::softPriorityTrain);
     }
 
 
@@ -999,7 +752,7 @@ public:
             int iter_cutoff)
     {
         int i = rand(0, data.size()-1);
-        reptile_step(try_learner, data, iter_cutoff, i, 0.33);
+        reptile_step(try_learner, data, iter_cutoff, 0.33, i);
     }
 
     void reptile_step_vary_epsilon(
@@ -1076,6 +829,12 @@ public:
         individual_score.max_error = max_error_over_rows;
         individual_score.sum_error = sum_error_over_rows;
 
+//        cout << "local_iter " << local_iter << endl;
+//        cout << "learning_param.iter_cutoff " << learning_param.iter_cutoff << endl;
+//        cout << "local_error.second " << local_error.second << endl;
+//        cout << "learning_param.threshold " << learning_param.threshold << endl;
+
+
         if(local_iter == learning_param.iter_cutoff && local_error.second > learning_param.threshold)
         {
             score.num_train_fail++;
@@ -1114,8 +873,8 @@ public:
 
         for(int i = 0;i<data.size();i++)
         {
-            individual_scores.push_back
-            (evaluate_unit_task(try_learner, &data[i], print, learning_param, score, choosePriorityTrain));
+            individual_scores.push_back(
+                    evaluate_unit_task(try_learner, &data[i], print, learning_param, score, choosePriorityTrain));
         }
 
         score.set_individual_scores(individual_scores);

@@ -175,7 +175,8 @@ public:
                     first_teacher.train(&local_local_data, param, training_f);
 
                     typedef NeuralNetwork::data_model::bit_dimension_pair bit_dimension_pair;
-                    vector<bit_dimension_pair> sorted_pairs = first_teacher.the_model.sort_bit_dimension_pairs(&local_data); //first_teacher.the_model.sort_functional_dimension_pairs();//
+                    vector<bit_dimension_pair> sorted_pairs =
+                            first_teacher.the_model.sort_bit_dimension_pairs(&local_data); //first_teacher.the_model.sort_functional_dimension_pairs();//
 
                     int at = 0;
                     bool enter = false;

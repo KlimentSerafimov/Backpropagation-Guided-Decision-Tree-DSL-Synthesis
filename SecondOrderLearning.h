@@ -71,6 +71,8 @@ public:
                 {
                     k_iter--;
                 }
+                params.iter_cutoff = k_iter;
+                params.threshold = treshold;
                 at_walking_solution = evaluate_meta_learner(SA_iter_best_solution, f_data, true, root_iter, params);
             }
             cout << "NEW k_iter = " << k_iter <<"; NEW treshold = " << treshold << endl;
@@ -97,7 +99,7 @@ public:
 
                     k_iter_loops+=repeat_count;
                     NeuralNetworkAndScore new_score = at_walking_solution =
-                                                      evaluate_meta_learner(at_walking_solution, f_data, true, root_iter, params);
+                              evaluate_meta_learner(at_walking_solution, f_data, true, root_iter, params);
 
                     //cout << new_score << endl;
 
@@ -200,13 +202,14 @@ public:
             FirstOrderLearning<DataType>::reptile_train(local_try_learner, data[i], root_iter, params);
 
             NeuralNetworkAndScore reptile_score =
-                    FirstOrderLearning<DataType>::evaluate_learner_softPriorityTrain(local_try_learner, data[i], print, params);
+                    FirstOrderLearning<DataType>::evaluate_learner_softPriorityTrain(
+                            local_try_learner, data[i], print, params);
 
             score.is_init_score = false;
             score.max_error = max(score.max_error, reptile_score.max_error);
             score.sum_error += reptile_score.sum_error;
             score.num_train_fail += reptile_score.num_train_fail;
-            score.max_leaf_iter = max(score.max_leaf_iter, reptile_score.max_leaf_iter);
+            score.update_max_leaf_iter(reptile_score.max_leaf_iter);
 
             if(print)
             {
